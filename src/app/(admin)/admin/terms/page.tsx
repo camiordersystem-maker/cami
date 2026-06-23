@@ -50,16 +50,34 @@ export default function AdminTermsPage() {
   }
 
   async function publish() {
+    if (!content.trim()) {
+      setMessage({ text: "内容を入力してください", ok: false });
+      return;
+    }
     if (!confirm("約款を公開しますか？会員が閲覧できるようになります。")) return;
     setPublishing(true);
     setMessage(null);
+
+    // 保存してから公開（レコードが未作成でも対応）
+    const putRes = await fetch("/api/admin/terms", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (!putRes.ok) {
+      setPublishing(false);
+      setMessage({ text: "保存に失敗しました", ok: false });
+      return;
+    }
+
     const res = await fetch("/api/admin/terms", { method: "PATCH" });
     setPublishing(false);
     if (res.ok) {
       setMessage({ text: "公開しました", ok: true });
       load();
     } else {
-      setMessage({ text: "公開に失敗しました", ok: false });
+      const d = await res.json().catch(() => ({}));
+      setMessage({ text: d.error ?? "公開に失敗しました", ok: false });
     }
   }
 

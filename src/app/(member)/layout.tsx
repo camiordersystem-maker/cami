@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -20,7 +21,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     <div className="min-h-screen flex bg-slate-100">
       <aside className="w-60 bg-blue-900 text-white flex flex-col shrink-0 min-h-screen">
         <div className="px-6 py-5 border-b border-blue-800">
-          <div className="font-bold text-lg tracking-wide">Cami</div>
+          <Image src="/cami-logo.png" alt="Cami" width={90} height={36} className="object-contain brightness-0 invert mb-1" />
           <div className="text-blue-300 text-xs mt-0.5">受発注システム（店舗）</div>
         </div>
 

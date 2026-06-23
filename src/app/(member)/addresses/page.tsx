@@ -46,18 +46,23 @@ export default function AddressesPage() {
       phone: fd.get("phone"),
       isDefault: fd.get("isDefault") === "on",
     };
-    const res = await fetch("/api/addresses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    setSaving(false);
-    if (res.ok) {
-      setShowForm(false);
-      load();
-    } else {
-      const d = await res.json();
-      setError(d.error ?? "エラーが発生しました");
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      setSaving(false);
+      if (res.ok) {
+        setShowForm(false);
+        load();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setError((d as { error?: string }).error ?? "エラーが発生しました");
+      }
+    } catch {
+      setSaving(false);
+      setError("ネットワークエラーが発生しました。再度お試しください。");
     }
   }
 

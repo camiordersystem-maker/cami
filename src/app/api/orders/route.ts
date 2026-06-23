@@ -139,13 +139,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Send confirmation email
-  await sendOrderConfirmation({
-    to: member.email,
-    companyName: member.companyName,
-    orderNo: order.orderNo,
-    total: order.total,
-  });
+  // メール送信失敗は注文完了を妨げない
+  try {
+    await sendOrderConfirmation({
+      to: member.email,
+      companyName: member.companyName,
+      orderNo: order.orderNo,
+      total: order.total,
+    });
+  } catch (e) {
+    console.error("Order confirmation email failed:", e);
+  }
 
   // Audit log
   await db.insert(schema.auditLogs).values({

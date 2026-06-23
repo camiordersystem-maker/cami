@@ -105,6 +105,7 @@ export const products = pgTable("products", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   description: text("description"),
+  imageUrl: text("image_url"),
   retailPrice: integer("retail_price").notNull().default(3880),
   bottlesPerBox: integer("bottles_per_box").notNull().default(24),
   isActive: boolean("is_active").notNull().default(true),

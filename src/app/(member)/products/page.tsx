@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 type Product = {
   id: string;
   name: string;
   description: string | null;
+  imageUrl: string | null;
   retailPrice: number;
   bottlesPerBox: number;
   isActive: boolean;
@@ -228,8 +230,20 @@ export default function ProductsPage() {
           ) : (
             products.map((p) => (
               <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                <div className="flex items-start justify-between gap-4">
+                  {p.imageUrl && (
+                    <div className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0">
+                      <Image
+                        src={p.imageUrl}
+                        alt={p.name}
+                        width={80}
+                        height={80}
+                        className="object-cover w-full h-full"
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-slate-900">{p.name}</h3>
                     {p.description && (
                       <p className="text-slate-500 text-sm mt-1">{p.description}</p>

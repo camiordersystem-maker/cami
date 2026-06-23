@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
       rankId: defaultRank.id,
     });
 
-    await sendNewMemberNotification({ companyName, contactName, email });
+    // メール送信失敗は登録自体を妨げない
+    try {
+      await sendNewMemberNotification({ companyName, contactName, email });
+    } catch (e) {
+      console.error("Registration notification email failed:", e);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

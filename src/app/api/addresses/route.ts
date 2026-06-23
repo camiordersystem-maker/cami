@@ -37,18 +37,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "入力内容を確認してください" }, { status: 400 });
   }
 
-  // If setting as default, clear others
-  if (parsed.data.isDefault) {
-    await db
-      .update(schema.shippingAddresses)
-      .set({ isDefault: false })
-      .where(eq(schema.shippingAddresses.memberId, session.user.id));
+  try {
+    // If setting as default, clear others
+    if (parsed.data.isDefault) {
+      await db
+        .update(schema.shippingAddresses)
+        .set({ isDefault: false })
+        .where(eq(schema.shippingAddresses.memberId, session.user.id));
+    }
+
+    const [address] = await db
+      .insert(schema.shippingAddresses)
+      .values({ ...parsed.data, memberId: session.user.id })
+      .returning();
+
+    return NextResponse.json(address, { status: 201 });
+  } catch (e) {
+    console.error("Address save error:", e);
+    return NextResponse.json({ error: "配送先の保存に失敗しました" }, { status: 500 });
   }
-
-  const [address] = await db
-    .insert(schema.shippingAddresses)
-    .values({ ...parsed.data, memberId: session.user.id })
-    .returning();
-
-  return NextResponse.json(address, { status: 201 });
 }

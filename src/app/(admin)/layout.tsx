@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const navItems = [
@@ -22,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex bg-slate-100">
       <aside className="w-60 bg-slate-900 text-white flex flex-col shrink-0 min-h-screen">
         <div className="px-6 py-5 border-b border-slate-700">
-          <div className="font-bold text-lg tracking-wide">Cami</div>
+          <Image src="/cami-logo.png" alt="Cami" width={90} height={36} className="object-contain brightness-0 invert mb-1" />
           <div className="text-slate-400 text-xs mt-0.5">管理システム（本部）</div>
         </div>
 
