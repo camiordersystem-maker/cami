@@ -60,7 +60,7 @@ export default async function AdminOrdersPage({
           href="/api/admin/export/orders"
           className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
         >
-          📥 CSV出力
+          CSV出力
         </a>
       </div>
 

@@ -5,10 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/dashboard", label: "ダッシュボード", icon: "🏠" },
-  { href: "/products", label: "商品注文", icon: "📦" },
-  { href: "/orders", label: "注文履歴", icon: "📋" },
-  { href: "/addresses", label: "配送先管理", icon: "📍" },
+  { href: "/dashboard", label: "ダッシュボード" },
+  { href: "/products", label: "商品注文" },
+  { href: "/orders", label: "注文履歴" },
+  { href: "/addresses", label: "配送先管理" },
+  { href: "/terms", label: "契約書" },
 ];
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
@@ -32,13 +33,12 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
+                className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
                   active
                     ? "bg-blue-700 text-white"
                     : "text-blue-200 hover:bg-blue-800 hover:text-white"
                 }`}
               >
-                <span>{item.icon}</span>
                 {item.label}
               </Link>
             );

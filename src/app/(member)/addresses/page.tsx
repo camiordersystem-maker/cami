@@ -149,7 +149,6 @@ export default function AddressesPage() {
         <div className="text-slate-400 text-sm py-10 text-center">読み込み中...</div>
       ) : addresses.length === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 py-16 text-center">
-          <div className="text-4xl mb-3">📍</div>
           <div className="text-slate-500 text-sm">配送先がまだ登録されていません</div>
         </div>
       ) : (

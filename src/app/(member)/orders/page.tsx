@@ -28,7 +28,6 @@ export default async function MemberOrdersPage() {
       <div className="bg-white rounded-xl border border-slate-200">
         {orders.length === 0 ? (
           <div className="py-20 text-center">
-            <div className="text-4xl mb-3">📋</div>
             <div className="text-slate-500 text-sm">まだ注文がありません</div>
             <Link
               href="/products"

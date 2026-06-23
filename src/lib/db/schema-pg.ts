@@ -187,6 +187,19 @@ export const auditLogs = pgTable(
   ]
 );
 
+// ─── terms ────────────────────────────────────────────────────────────────────
+
+export const terms = pgTable("terms", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  content: text("content").notNull().default(""),
+  isPublished: boolean("is_published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: text("updated_by").notNull().default("system"),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const memberRanksRelations = relations(memberRanks, ({ many }) => ({

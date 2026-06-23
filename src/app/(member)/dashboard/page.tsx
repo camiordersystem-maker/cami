@@ -71,7 +71,6 @@ export default async function MemberDashboardPage() {
           href="/products"
           className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl p-6 transition-colors"
         >
-          <div className="text-2xl mb-2">📦</div>
           <div className="font-bold text-lg">商品を注文する</div>
           <div className="text-blue-200 text-sm mt-1">
             掛け率 {rank ? `${Math.round(rank.rate * 100)}%` : "—"} で購入
@@ -81,7 +80,6 @@ export default async function MemberDashboardPage() {
           href="/orders"
           className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 rounded-xl p-6 transition-colors"
         >
-          <div className="text-2xl mb-2">📋</div>
           <div className="font-bold text-lg">注文履歴を確認</div>
           <div className="text-slate-500 text-sm mt-1">ステータス・請求書を確認</div>
         </Link>

@@ -51,6 +51,9 @@ export default function ProductsPage() {
       const def = addrs.find((a: Address) => a.isDefault);
       if (def) setSelectedAddress(def.id);
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
+      setError("データの読み込みに失敗しました。ページを再読み込みしてください。");
     });
   }, []);
 

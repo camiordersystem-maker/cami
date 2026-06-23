@@ -211,6 +211,19 @@ export const auditLogs = sqliteTable(
   ]
 );
 
+// ─── terms ────────────────────────────────────────────────────────────────────
+
+export const terms = sqliteTable("terms", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  content: text("content").notNull().default(""),
+  isPublished: integer("is_published", { mode: "boolean" }).notNull().default(false),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+  version: integer("version").notNull().default(1),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedBy: text("updated_by").notNull().default("system"),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const memberRanksRelations = relations(memberRanks, ({ many }) => ({
@@ -295,6 +308,8 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type Terms = typeof terms.$inferSelect;
+export type NewTerms = typeof terms.$inferInsert;
 
 // ─── Status type aliases ──────────────────────────────────────────────────────
 

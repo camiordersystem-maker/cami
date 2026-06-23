@@ -21,15 +21,15 @@ type OrderDetail = {
 
 const TRANSITIONS: Record<string, { label: string; next: string; color: string }[]> = {
   pending: [
-    { label: "✅ 注文を確認する", next: "confirmed", color: "bg-blue-600 hover:bg-blue-700 text-white" },
-    { label: "❌ キャンセル", next: "cancelled", color: "bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" },
+    { label: "注文を確認する", next: "confirmed", color: "bg-blue-600 hover:bg-blue-700 text-white" },
+    { label: "キャンセル", next: "cancelled", color: "bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" },
   ],
   confirmed: [
-    { label: "🚚 発送済みにする", next: "shipped", color: "bg-purple-600 hover:bg-purple-700 text-white" },
-    { label: "❌ キャンセル", next: "cancelled", color: "bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" },
+    { label: "発送済みにする", next: "shipped", color: "bg-purple-600 hover:bg-purple-700 text-white" },
+    { label: "キャンセル", next: "cancelled", color: "bg-red-50 hover:bg-red-100 text-red-700 border border-red-200" },
   ],
   shipped: [
-    { label: "📦 配達完了にする", next: "delivered", color: "bg-green-600 hover:bg-green-700 text-white" },
+    { label: "配達完了にする", next: "delivered", color: "bg-green-600 hover:bg-green-700 text-white" },
   ],
   delivered: [],
   cancelled: [],

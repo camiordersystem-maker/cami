@@ -50,12 +50,20 @@ export default async function AdminMembersPage({
           <h1 className="text-2xl font-bold text-slate-900">会員管理</h1>
           <p className="text-slate-500 text-sm mt-1">全 {members.length} 件</p>
         </div>
-        <a
-          href="/api/admin/export/members"
-          className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
-        >
-          📥 CSV出力
-        </a>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/members/new"
+            className="text-sm text-white bg-slate-800 hover:bg-slate-900 px-4 py-2 rounded-lg transition-colors font-medium"
+          >
+            新規店舗登録
+          </Link>
+          <a
+            href="/api/admin/export/members"
+            className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
+          >
+            CSV出力
+          </a>
+        </div>
       </div>
 
       {/* Tabs */}

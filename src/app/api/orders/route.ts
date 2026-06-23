@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { z } from "zod";
 import { generateOrderNo } from "@/lib/utils";
 import { sendOrderConfirmation } from "@/lib/email";
@@ -116,17 +116,27 @@ export async function POST(req: NextRequest) {
     orderItemValues.map((item) => ({ ...item, orderId: order.id }))
   );
 
-  // Deduct inventory
+  // Deduct inventory atomically — prevents race condition between concurrent orders
   for (const item of items) {
-    const [inv] = await db.select().from(schema.inventory).where(eq(schema.inventory.productId, item.productId));
-    await db
+    const updated = await db
       .update(schema.inventory)
       .set({
-        availableBoxes: (inv?.availableBoxes ?? 0) - item.boxes,
+        availableBoxes: sql`${schema.inventory.availableBoxes} - ${item.boxes}`,
         updatedAt: new Date(),
         updatedBy: memberId,
       })
-      .where(eq(schema.inventory.productId, item.productId));
+      .where(
+        and(
+          eq(schema.inventory.productId, item.productId),
+          gte(schema.inventory.availableBoxes, item.boxes)
+        )
+      )
+      .returning({ id: schema.inventory.id });
+
+    if (updated.length === 0) {
+      await db.update(schema.orders).set({ status: "cancelled" }).where(eq(schema.orders.id, order.id));
+      return NextResponse.json({ error: `在庫が不足しました。注文をキャンセルしました。` }, { status: 409 });
+    }
   }
 
   // Send confirmation email

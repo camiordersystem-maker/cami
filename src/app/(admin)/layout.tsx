@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/admin/dashboard", label: "ダッシュボード", icon: "📊" },
-  { href: "/admin/orders", label: "注文管理", icon: "📋" },
-  { href: "/admin/members", label: "会員管理", icon: "👥" },
-  { href: "/admin/products", label: "商品管理", icon: "📦" },
-  { href: "/admin/inventory", label: "在庫管理", icon: "🏭" },
-  { href: "/admin/ranks", label: "ランク管理", icon: "⭐" },
+  { href: "/admin/dashboard", label: "ダッシュボード" },
+  { href: "/admin/orders", label: "注文管理" },
+  { href: "/admin/members", label: "会員管理" },
+  { href: "/admin/products", label: "商品管理" },
+  { href: "/admin/inventory", label: "在庫管理" },
+  { href: "/admin/ranks", label: "ランク管理" },
+  { href: "/admin/terms", label: "約款管理" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -34,13 +35,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
+                className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
                   active
                     ? "bg-slate-700 text-white"
                     : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 }`}
               >
-                <span>{item.icon}</span>
                 {item.label}
               </Link>
             );

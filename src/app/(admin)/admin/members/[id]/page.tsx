@@ -161,14 +161,14 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
                     disabled={updating}
                     className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                   >
-                    ✅ 承認する
+                    承認する
                   </button>
                   <button
                     onClick={() => updateStatus("rejected")}
                     disabled={updating}
                     className="w-full py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                   >
-                    ❌ 却下する
+                    却下する
                   </button>
                 </>
               )}
@@ -178,7 +178,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
                   disabled={updating}
                   className="w-full py-2.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
-                  ⏸ 停止する
+                  停止する
                 </button>
               )}
               {(member.status === "rejected" || member.status === "suspended") && (
@@ -187,7 +187,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
                   disabled={updating}
                   className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
-                  ✅ 再承認する
+                  再承認する
                 </button>
               )}
               {member.status === "approved" && (

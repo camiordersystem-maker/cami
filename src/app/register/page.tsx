@@ -48,7 +48,6 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
         <div className="w-full max-w-md text-center">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10">
-            <div className="text-5xl mb-4">✅</div>
             <h2 className="text-xl font-bold text-slate-900 mb-2">申請を受け付けました</h2>
             <p className="text-slate-600 text-sm leading-relaxed">
               審査完了後、登録メールアドレスにご連絡いたします。<br />
