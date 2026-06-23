@@ -1,77 +1,42 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { hkdf, jwtDecrypt } from "jose";
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/register", "/api/auth"];
+// 認証不要のパス
+const PUBLIC_PATHS = [
+  "/login",
+  "/register",
+  "/api/auth",
+  "/api/register",
+  "/_next",
+  "/favicon.ico",
+]
 
-function isPublic(pathname: string) {
-  return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-}
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-async function getSessionRole(req: NextRequest): Promise<string | null> {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) return null;
-
-  // NextAuth v5 uses __Secure- prefix in production (HTTPS), without in dev
-  const token =
-    req.cookies.get("__Secure-authjs.session-token")?.value ||
-    req.cookies.get("authjs.session-token")?.value;
-  if (!token) return null;
-
-  try {
-    // NextAuth v5 derives the JWE key via HKDF (same as @auth/core/jwt.ts)
-    const encKey = await hkdf(
-      "sha256",
-      secret,
-      "",
-      "Auth.js Generated Encryption Key",
-      32
-    );
-    const { payload } = await jwtDecrypt(token, encKey);
-    return (payload as { role?: string }).role ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  const role = await getSessionRole(req);
-  const isLoggedIn = role !== null;
-
-  if (!isLoggedIn && !isPublic(pathname)) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // 公開パスはそのまま通す
+  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
+  if (isPublic) {
+    return NextResponse.next()
   }
 
-  if (isLoggedIn) {
-    if (pathname === "/login" || pathname === "/register") {
-      const dest = role === "admin" ? "/admin/dashboard" : "/dashboard";
-      return NextResponse.redirect(new URL(dest, req.url));
-    }
+  // セッションcookieの存在確認のみ（復号はしない）
+  const sessionToken =
+    request.cookies.get("authjs.session-token") ||
+    request.cookies.get("__Secure-authjs.session-token") ||
+    request.cookies.get("next-auth.session-token") ||
+    request.cookies.get("__Secure-next-auth.session-token")
 
-    if (pathname === "/") {
-      const dest = role === "admin" ? "/admin/dashboard" : "/dashboard";
-      return NextResponse.redirect(new URL(dest, req.url));
-    }
-
-    if (
-      role === "admin" &&
-      !pathname.startsWith("/admin") &&
-      !isPublic(pathname) &&
-      !pathname.startsWith("/api")
-    ) {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-    }
-
-    if (role === "member" && pathname.startsWith("/admin")) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+  if (!sessionToken) {
+    // 未ログイン → /login にリダイレクト
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("callbackUrl", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next();
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)"],
-};
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+}
