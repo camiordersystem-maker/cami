@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatDate, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
+import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
 
 type Member = {
   id: string;
@@ -25,13 +24,17 @@ type Member = {
 type Rank = { id: string; name: string; rate: number };
 
 export default function AdminMemberDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
   const [member, setMember] = useState<Member | null>(null);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [selectedRank, setSelectedRank] = useState("");
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  // Basic info edit state
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [infoForm, setInfoForm] = useState({ companyName: "", contactName: "", phone: "", address: "", businessDescription: "" });
+  const [savingInfo, setSavingInfo] = useState(false);
 
   async function load() {
     const [mRes, rRes] = await Promise.all([
@@ -42,6 +45,13 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
       const data = await mRes.json();
       setMember(data);
       setSelectedRank(data.rankId);
+      setInfoForm({
+        companyName: data.companyName,
+        contactName: data.contactName,
+        phone: data.phone,
+        address: data.address,
+        businessDescription: data.businessDescription ?? "",
+      });
     }
     if (rRes.ok) setRanks(await rRes.json());
     setLoading(false);
@@ -49,31 +59,70 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
 
   useEffect(() => { load(); }, [params.id]);
 
+  async function patch(body: Record<string, unknown>, successMsg: string) {
+    setUpdating(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/admin/members/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      setUpdating(false);
+      if (res.ok) {
+        setMessage({ text: successMsg, ok: true });
+        load();
+      } else {
+        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+      }
+    } catch {
+      setUpdating(false);
+      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+    }
+  }
+
   async function updateStatus(status: string) {
     const label = MEMBER_STATUS_LABEL[status];
     if (!confirm(`ステータスを「${label}」に変更しますか？`)) return;
-    setUpdating(true);
-    setError("");
-    const res = await fetch(`/api/admin/members/${params.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setUpdating(false);
-    if (res.ok) load();
-    else { const d = await res.json(); setError(d.error ?? "エラー"); }
+    await patch({ status }, `ステータスを「${label}」に変更しました`);
   }
 
   async function updateRank() {
     if (selectedRank === member?.rankId) return;
-    setUpdating(true);
-    const res = await fetch(`/api/admin/members/${params.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rankId: selectedRank }),
-    });
-    setUpdating(false);
-    if (res.ok) load();
+    const rank = ranks.find((r) => r.id === selectedRank);
+    await patch({ rankId: selectedRank }, `ランクを「${rank?.name ?? ""}」に変更しました`);
+  }
+
+  async function saveInfo(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingInfo(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`/api/admin/members/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: infoForm.companyName,
+          contactName: infoForm.contactName,
+          phone: infoForm.phone,
+          address: infoForm.address,
+          businessDescription: infoForm.businessDescription || null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSavingInfo(false);
+      if (res.ok) {
+        setMessage({ text: "基本情報を更新しました", ok: true });
+        setEditingInfo(false);
+        load();
+      } else {
+        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+      }
+    } catch {
+      setSavingInfo(false);
+      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+    }
   }
 
   const fmt = (n: number) =>
@@ -100,8 +149,10 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
         </span>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 mb-6">{error}</div>
+      {message && (
+        <div className={`mb-6 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          {message.text}
+        </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -109,21 +160,71 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
         <div className="space-y-4">
           {/* Member Info */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <h2 className="font-semibold text-slate-900 text-sm mb-4">基本情報</h2>
-            <div className="space-y-3 text-sm">
-              {[
-                { label: "担当者", value: member.contactName },
-                { label: "メール", value: member.email },
-                { label: "電話", value: member.phone },
-                { label: "住所", value: member.address },
-                { label: "事業概要", value: member.businessDescription ?? "—" },
-              ].map((r) => (
-                <div key={r.label}>
-                  <div className="text-xs text-slate-500 mb-0.5">{r.label}</div>
-                  <div className="text-slate-800">{r.value}</div>
-                </div>
-              ))}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-slate-900 text-sm">基本情報</h2>
+              {!editingInfo && (
+                <button
+                  onClick={() => setEditingInfo(true)}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  編集
+                </button>
+              )}
             </div>
+
+            {editingInfo ? (
+              <form onSubmit={saveInfo} className="space-y-3">
+                {[
+                  { key: "companyName", label: "店舗名", required: true },
+                  { key: "contactName", label: "担当者", required: true },
+                  { key: "phone", label: "電話", required: true },
+                  { key: "address", label: "住所", required: true },
+                  { key: "businessDescription", label: "事業概要", required: false },
+                ].map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-xs text-slate-500 mb-0.5">{f.label}</label>
+                    <input
+                      required={f.required}
+                      value={infoForm[f.key as keyof typeof infoForm]}
+                      onChange={(e) => setInfoForm((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={savingInfo}
+                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    {savingInfo ? "保存中..." : "保存"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingInfo(false)}
+                    className="px-3 py-1.5 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3 text-sm">
+                {[
+                  { label: "店舗名", value: member.companyName },
+                  { label: "担当者", value: member.contactName },
+                  { label: "メール", value: member.email },
+                  { label: "電話", value: member.phone },
+                  { label: "住所", value: member.address },
+                  { label: "事業概要", value: member.businessDescription ?? "—" },
+                ].map((r) => (
+                  <div key={r.label}>
+                    <div className="text-xs text-slate-500 mb-0.5">{r.label}</div>
+                    <div className="text-slate-800">{r.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Rank Change */}

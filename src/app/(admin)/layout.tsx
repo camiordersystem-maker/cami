@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+const baseNavItems = [
   { href: "/admin/dashboard", label: "ダッシュボード" },
   { href: "/admin/orders", label: "注文管理" },
   { href: "/admin/members", label: "会員管理" },
@@ -15,9 +15,17 @@ const navItems = [
   { href: "/admin/terms", label: "約款管理" },
 ];
 
+const superAdminNavItems = [
+  { href: "/admin/administrators", label: "管理者設定" },
+];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const adminRole = (session?.user as { adminRole?: string })?.adminRole;
+  const isSuperAdmin = adminRole === "superadmin";
+
+  const navItems = isSuperAdmin ? [...baseNavItems, ...superAdminNavItems] : baseNavItems;
 
   return (
     <div className="min-h-screen flex bg-slate-100">
@@ -52,9 +60,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="text-xs text-slate-300 font-medium truncate mb-0.5">
             {session?.user?.name}
           </div>
-          <div className="text-xs text-slate-500 truncate mb-3">
+          <div className="text-xs text-slate-500 truncate mb-1">
             {session?.user?.email}
           </div>
+          {adminRole && (
+            <div className="text-xs text-slate-600 mb-3">
+              {adminRole === "superadmin" ? "スーパー管理者" : adminRole === "editor" ? "編集者" : "閲覧者"}
+            </div>
+          )}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-xs text-slate-400 hover:text-white transition-colors"

@@ -36,6 +36,7 @@ export const admins = sqliteTable(
     email: text("email").notNull(),
     password: text("password").notNull(),
     name: text("name").notNull(),
+    role: text("role").notNull().default("editor"), // superadmin | editor | viewer
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()

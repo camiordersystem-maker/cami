@@ -17,6 +17,7 @@ export default function AdminRanksPage() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin/ranks");
@@ -30,6 +31,7 @@ export default function AdminRanksPage() {
     e.preventDefault();
     setSaving(true);
     setError("");
+    setMessage(null);
     const fd = new FormData(e.currentTarget);
     const body = {
       ...(editing ? { id: editing.id } : {}),
@@ -39,13 +41,24 @@ export default function AdminRanksPage() {
       description: fd.get("description") || null,
     };
 
-    const res = editing
-      ? await fetch("/api/admin/ranks", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      : await fetch("/api/admin/ranks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-
-    setSaving(false);
-    if (res.ok) { setEditing(null); setShowForm(false); load(); }
-    else { const d = await res.json(); setError(d.error ?? "エラー"); }
+    try {
+      const res = editing
+        ? await fetch("/api/admin/ranks", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        : await fetch("/api/admin/ranks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      setSaving(false);
+      if (res.ok) {
+        setMessage({ text: editing ? "ランクを更新しました" : "ランクを追加しました", ok: true });
+        setEditing(null);
+        setShowForm(false);
+        load();
+      } else {
+        setError((data as { error?: string }).error ?? "エラーが発生しました");
+      }
+    } catch {
+      setSaving(false);
+      setError("ネットワークエラーが発生しました");
+    }
   }
 
   return (
@@ -56,12 +69,18 @@ export default function AdminRanksPage() {
           <p className="text-slate-500 text-sm mt-1">卸値掛け率を会員ランクで管理します</p>
         </div>
         <button
-          onClick={() => { setEditing(null); setShowForm(!showForm); setError(""); }}
+          onClick={() => { setEditing(null); setShowForm(!showForm); setError(""); setMessage(null); }}
           className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           + ランクを追加
         </button>
       </div>
+
+      {message && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          {message.text}
+        </div>
+      )}
 
       {/* Form */}
       {(showForm || editing) && (
@@ -113,10 +132,10 @@ export default function AdminRanksPage() {
               <div className="col-span-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</div>
             )}
             <div className="col-span-2 flex gap-3">
-              <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50">
+              <button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors">
                 {saving ? "保存中..." : "保存"}
               </button>
-              <button type="button" onClick={() => { setEditing(null); setShowForm(false); }} className="text-slate-600 px-4 py-2 text-sm">キャンセル</button>
+              <button type="button" onClick={() => { setEditing(null); setShowForm(false); setError(""); }} className="text-slate-600 px-4 py-2 text-sm">キャンセル</button>
             </div>
           </form>
         </div>
@@ -148,7 +167,7 @@ export default function AdminRanksPage() {
                   <div className="text-xs text-slate-500 mb-3">{rank.description}</div>
                 )}
                 <button
-                  onClick={() => { setEditing(rank); setShowForm(false); setError(""); }}
+                  onClick={() => { setEditing(rank); setShowForm(false); setError(""); setMessage(null); }}
                   className="text-xs text-blue-600 hover:underline"
                 >
                   編集

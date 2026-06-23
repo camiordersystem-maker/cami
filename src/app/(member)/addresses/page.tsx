@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
 
 type Address = {
   id: string;
@@ -16,12 +15,12 @@ type Address = {
 };
 
 export default function AddressesPage() {
-  const { data: session } = useSession();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   async function load() {
     const res = await fetch("/api/addresses");
@@ -35,6 +34,7 @@ export default function AddressesPage() {
     e.preventDefault();
     setSaving(true);
     setError("");
+    setMessage("");
     const fd = new FormData(e.currentTarget);
     const body = {
       label: fd.get("label"),
@@ -55,6 +55,7 @@ export default function AddressesPage() {
       setSaving(false);
       if (res.ok) {
         setShowForm(false);
+        setMessage("配送先を登録しました");
         load();
       } else {
         const d = await res.json().catch(() => ({}));
@@ -68,17 +69,29 @@ export default function AddressesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("この配送先を削除しますか？")) return;
-    await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-    load();
+    try {
+      await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      setMessage("配送先を削除しました");
+      load();
+    } catch {
+      setError("削除に失敗しました");
+    }
   }
 
   async function handleSetDefault(id: string) {
-    await fetch(`/api/addresses/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isDefault: true }),
-    });
-    load();
+    try {
+      const res = await fetch(`/api/addresses/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDefault: true }),
+      });
+      if (res.ok) {
+        setMessage("デフォルトの配送先を変更しました");
+        load();
+      }
+    } catch {
+      setError("更新に失敗しました");
+    }
   }
 
   return (
@@ -89,12 +102,18 @@ export default function AddressesPage() {
           <p className="text-slate-500 text-sm mt-1">注文時の配送先を管理します</p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setError(""); setMessage(""); }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           + 配送先を追加
         </button>
       </div>
+
+      {message && (
+        <div className="mb-4 px-4 py-3 rounded-xl text-sm border bg-green-50 border-green-200 text-green-700">
+          {message}
+        </div>
+      )}
 
       {/* Add Form */}
       {showForm && (
@@ -117,7 +136,7 @@ export default function AddressesPage() {
                 <input
                   name={f.name}
                   required={f.required}
-                  placeholder={f.placeholder}
+                  placeholder={(f as { placeholder?: string }).placeholder}
                   className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -139,7 +158,7 @@ export default function AddressesPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setError(""); }}
                 className="text-slate-600 hover:text-slate-800 px-4 py-2 text-sm"
               >
                 キャンセル

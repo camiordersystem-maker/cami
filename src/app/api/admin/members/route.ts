@@ -5,6 +5,7 @@ import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { requireEditor } from "@/lib/admin-auth";
 
 const createSchema = z.object({
   companyName: z.string().min(1, "店舗名は必須です"),
@@ -19,9 +20,8 @@ const createSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as { role: string }).role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireEditor(session);
+  if (authErr) return authErr;
 
   const parsed = createSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -31,39 +31,44 @@ export async function POST(req: NextRequest) {
 
   const { companyName, contactName, email, password, phone, address, businessDescription, rankId } = parsed.data;
 
-  const existing = await db
-    .select({ id: schema.members.id })
-    .from(schema.members)
-    .where(eq(schema.members.email, email));
+  try {
+    const existing = await db
+      .select({ id: schema.members.id })
+      .from(schema.members)
+      .where(eq(schema.members.email, email));
 
-  if (existing.length > 0) {
-    return NextResponse.json({ error: "このメールアドレスはすでに登録されています" }, { status: 409 });
+    if (existing.length > 0) {
+      return NextResponse.json({ error: "このメールアドレスはすでに登録されています" }, { status: 409 });
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    const [member] = await db
+      .insert(schema.members)
+      .values({
+        email,
+        password: hashed,
+        companyName,
+        contactName,
+        phone,
+        address,
+        businessDescription: businessDescription ?? null,
+        status: "approved",
+        rankId,
+      })
+      .returning({ id: schema.members.id });
+
+    await db.insert(schema.auditLogs).values({
+      actorId: session!.user.id,
+      actorRole: "admin",
+      action: "create_member",
+      targetType: "member",
+      targetId: member.id,
+      afterValue: JSON.stringify({ email, companyName, status: "approved" }),
+    });
+
+    return NextResponse.json({ memberId: member.id }, { status: 201 });
+  } catch (e) {
+    console.error("create member error:", e);
+    return NextResponse.json({ error: "店舗の作成に失敗しました" }, { status: 500 });
   }
-
-  const hashed = await bcrypt.hash(password, 12);
-  const [member] = await db
-    .insert(schema.members)
-    .values({
-      email,
-      password: hashed,
-      companyName,
-      contactName,
-      phone,
-      address,
-      businessDescription: businessDescription ?? null,
-      status: "approved",
-      rankId,
-    })
-    .returning({ id: schema.members.id });
-
-  await db.insert(schema.auditLogs).values({
-    actorId: session.user.id,
-    actorRole: "admin",
-    action: "create_member",
-    targetType: "member",
-    targetId: member.id,
-    afterValue: JSON.stringify({ email, companyName, status: "approved" }),
-  });
-
-  return NextResponse.json({ memberId: member.id }, { status: 201 });
 }

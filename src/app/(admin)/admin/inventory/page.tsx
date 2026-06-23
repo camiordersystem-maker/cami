@@ -19,6 +19,7 @@ export default function AdminInventoryPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [inputValues, setInputValues] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin/inventory/list");
@@ -36,15 +37,25 @@ export default function AdminInventoryPage() {
 
   async function saveInventory(productId: string) {
     setSaving(productId);
-    const res = await fetch("/api/admin/inventory", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, availableBoxes: inputValues[productId] ?? 0 }),
-    });
-    setSaving(null);
-    if (res.ok) {
-      setEditing(null);
-      load();
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/inventory", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, availableBoxes: inputValues[productId] ?? 0 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSaving(null);
+      if (res.ok) {
+        setEditing(null);
+        setMessage({ text: "在庫数を更新しました", ok: true });
+        load();
+      } else {
+        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+      }
+    } catch {
+      setSaving(null);
+      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
     }
   }
 
@@ -68,6 +79,12 @@ export default function AdminInventoryPage() {
           CSV出力
         </a>
       </div>
+
+      {message && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          {message.text}
+        </div>
+      )}
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-4 mb-6">

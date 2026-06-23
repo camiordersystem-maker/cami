@@ -75,6 +75,7 @@ export const admins = pgTable(
     email: text("email").notNull(),
     password: text("password").notNull(),
     name: text("name").notNull(),
+    role: text("role").notNull().default("editor"), // superadmin | editor | viewer
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

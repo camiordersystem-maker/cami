@@ -39,18 +39,23 @@ export default function AdminNewMemberPage() {
     e.preventDefault();
     setSubmitting(true);
     setError("");
-    const res = await fetch("/api/admin/members", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "エラーが発生しました");
-      return;
+    try {
+      const res = await fetch("/api/admin/members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => ({}));
+      setSubmitting(false);
+      if (!res.ok) {
+        setError((data as { error?: string }).error ?? "エラーが発生しました");
+        return;
+      }
+      setCreated({ memberId: (data as { memberId: string }).memberId, email: form.email, password: form.password });
+    } catch {
+      setSubmitting(false);
+      setError("ネットワークエラーが発生しました。再度お試しください。");
     }
-    setCreated({ memberId: data.memberId, email: form.email, password: form.password });
   }
 
   if (created) {

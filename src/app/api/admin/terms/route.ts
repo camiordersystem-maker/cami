@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { requireEditor } from "@/lib/admin-auth";
 
 export async function GET() {
   const session = await auth();
@@ -24,16 +25,15 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as { role: string }).role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireEditor(session);
+  if (authErr) return authErr;
 
   const body = await req.json();
   if (typeof body.content !== "string") {
     return NextResponse.json({ error: "content is required" }, { status: 400 });
   }
 
-  const adminId = session.user.id;
+  const adminId = session!.user.id;
 
   try {
     const [current] = await db
@@ -54,15 +54,14 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("terms PUT error:", e);
-    return NextResponse.json({ error: "約款テーブルが存在しません。マイグレーションを実行してください。" }, { status: 500 });
+    return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
   }
 }
 
 export async function PATCH() {
   const session = await auth();
-  if (!session || (session.user as { role: string }).role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireEditor(session);
+  if (authErr) return authErr;
 
   try {
     const [current] = await db
@@ -77,12 +76,12 @@ export async function PATCH() {
 
     await db
       .update(schema.terms)
-      .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date(), updatedBy: session.user.id })
+      .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date(), updatedBy: session!.user.id })
       .where(eq(schema.terms.id, current.id));
 
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("terms PATCH error:", e);
-    return NextResponse.json({ error: "約款テーブルが存在しません。マイグレーションを実行してください。" }, { status: 500 });
+    return NextResponse.json({ error: "公開に失敗しました" }, { status: 500 });
   }
 }
