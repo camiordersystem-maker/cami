@@ -9,9 +9,17 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+function parseDate(date: Date | string | null | undefined): Date | null {
+  if (date == null) return null;
+  if (date instanceof Date) return isNaN(date.getTime()) ? null : date;
+  // PostgreSQL returns "YYYY-MM-DD HH:mm:ss" (space, not T) — replace for ISO parsing
+  const d = new Date(date.replace(" ", "T"));
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export function formatDate(date: Date | string | null | undefined): string {
-  if (!date) return "—";
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d = parseDate(date);
+  if (!d) return "—";
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "2-digit",
@@ -20,8 +28,8 @@ export function formatDate(date: Date | string | null | undefined): string {
 }
 
 export function formatDateTime(date: Date | string | null | undefined): string {
-  if (!date) return "—";
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d = parseDate(date);
+  if (!d) return "—";
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "2-digit",
