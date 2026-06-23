@@ -11,11 +11,17 @@ export default async function MemberTermsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [published] = await db
-    .select()
-    .from(schema.terms)
-    .where(eq(schema.terms.isPublished, true))
-    .limit(1);
+  let published = null;
+  try {
+    const rows = await db
+      .select()
+      .from(schema.terms)
+      .where(eq(schema.terms.isPublished, true))
+      .limit(1);
+    published = rows[0] ?? null;
+  } catch {
+    // terms table not yet migrated
+  }
 
   return (
     <div>

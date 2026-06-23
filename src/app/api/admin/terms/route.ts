@@ -10,13 +10,16 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [current] = await db
-    .select()
-    .from(schema.terms)
-    .orderBy(desc(schema.terms.version))
-    .limit(1);
-
-  return NextResponse.json(current ?? null);
+  try {
+    const [current] = await db
+      .select()
+      .from(schema.terms)
+      .orderBy(desc(schema.terms.version))
+      .limit(1);
+    return NextResponse.json(current ?? null);
+  } catch {
+    return NextResponse.json(null);
+  }
 }
 
 export async function PUT(req: NextRequest) {
@@ -31,22 +34,28 @@ export async function PUT(req: NextRequest) {
   }
 
   const adminId = session.user.id;
-  const [current] = await db
-    .select()
-    .from(schema.terms)
-    .orderBy(desc(schema.terms.version))
-    .limit(1);
 
-  if (current) {
-    await db
-      .update(schema.terms)
-      .set({ content: body.content, updatedAt: new Date(), updatedBy: adminId })
-      .where(eq(schema.terms.id, current.id));
-  } else {
-    await db.insert(schema.terms).values({ content: body.content, updatedBy: adminId });
+  try {
+    const [current] = await db
+      .select()
+      .from(schema.terms)
+      .orderBy(desc(schema.terms.version))
+      .limit(1);
+
+    if (current) {
+      await db
+        .update(schema.terms)
+        .set({ content: body.content, updatedAt: new Date(), updatedBy: adminId })
+        .where(eq(schema.terms.id, current.id));
+    } else {
+      await db.insert(schema.terms).values({ content: body.content, updatedBy: adminId });
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("terms PUT error:", e);
+    return NextResponse.json({ error: "約款テーブルが存在しません。マイグレーションを実行してください。" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }
 
 export async function PATCH() {
@@ -55,20 +64,25 @@ export async function PATCH() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [current] = await db
-    .select()
-    .from(schema.terms)
-    .orderBy(desc(schema.terms.version))
-    .limit(1);
+  try {
+    const [current] = await db
+      .select()
+      .from(schema.terms)
+      .orderBy(desc(schema.terms.version))
+      .limit(1);
 
-  if (!current) {
-    return NextResponse.json({ error: "約款がありません" }, { status: 404 });
+    if (!current) {
+      return NextResponse.json({ error: "約款がありません" }, { status: 404 });
+    }
+
+    await db
+      .update(schema.terms)
+      .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date(), updatedBy: session.user.id })
+      .where(eq(schema.terms.id, current.id));
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("terms PATCH error:", e);
+    return NextResponse.json({ error: "約款テーブルが存在しません。マイグレーションを実行してください。" }, { status: 500 });
   }
-
-  await db
-    .update(schema.terms)
-    .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date(), updatedBy: session.user.id })
-    .where(eq(schema.terms.id, current.id));
-
-  return NextResponse.json({ ok: true });
 }

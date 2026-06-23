@@ -11,13 +11,21 @@ function escapeCsv(val: unknown): string {
   return s;
 }
 
-function toJst(date: Date | null | undefined): string {
-  if (!date) return "";
+function parseTs(d: Date | string | null | undefined): Date | null {
+  if (d == null) return null;
+  if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
+  const parsed = new Date((d as string).replace(" ", "T"));
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function toJst(date: Date | string | null | undefined): string {
+  const d = parseTs(date);
+  if (!d) return "";
   return new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit",
-  }).format(date);
+  }).format(d);
 }
 
 export async function GET() {
