@@ -77,3 +77,21 @@ export async function sendNewMemberNotification(params: {
      <p>管理画面から審査してください。</p>`
   );
 }
+
+export async function sendLowStockAlert(params: {
+  productName: string;
+  availableBoxes: number;
+  threshold: number;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@cami.co.jp";
+  const { productName, availableBoxes, threshold } = params;
+  await send(
+    adminEmail,
+    `【Cami】在庫残少アラート：${productName}`,
+    `<p>在庫が少なくなっています。</p>
+     <p>商品名：<strong>${productName}</strong><br>
+     現在在庫：<strong>${availableBoxes}箱</strong>（アラート閾値：${threshold}箱）</p>
+     <p>管理画面から在庫を補充してください。</p>
+     <p>Cami 管理システム</p>`
+  );
+}

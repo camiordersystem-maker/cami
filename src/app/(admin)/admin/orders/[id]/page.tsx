@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatCurrency, formatDate, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/utils";
+import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 
 type OrderDetail = {
   id: string;
@@ -11,7 +10,12 @@ type OrderDetail = {
   status: string;
   total: number;
   subtotal: number;
+  taxAmount: number;
+  taxRate: string | number;
+  paymentStatus: string;
   trackingNumber: string | null;
+  cancelReason: string | null;
+  memo: string | null;
   createdAt: string;
   updatedAt: string;
   member: { companyName: string; email: string; contactName: string } | null;
@@ -36,12 +40,13 @@ const TRANSITIONS: Record<string, { label: string; next: string; color: string }
 };
 
 export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [trackingInput, setTrackingInput] = useState("");
-  const [error, setError] = useState("");
+  const [cancelReasonInput, setCancelReasonInput] = useState("");
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
     const res = await fetch(`/api/admin/orders/${params.id}`);
@@ -55,40 +60,46 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
 
   useEffect(() => { load(); }, [params.id]);
 
-  async function updateStatus(nextStatus: string) {
-    if (!confirm(`ステータスを「${ORDER_STATUS_LABEL[nextStatus]}」に変更しますか？`)) return;
+  async function patch(body: Record<string, unknown>) {
     setUpdating(true);
-    setError("");
-    const body: Record<string, string> = { status: nextStatus };
-    if (nextStatus === "shipped" && trackingInput) body.trackingNumber = trackingInput;
+    setMessage(null);
     const res = await fetch(`/api/admin/orders/${params.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    const data = await res.json().catch(() => ({}));
     setUpdating(false);
-    if (res.ok) { load(); }
-    else {
-      const d = await res.json();
-      setError(d.error ?? "エラーが発生しました");
+    if (res.ok) {
+      setMessage({ text: "更新しました", ok: true });
+      load();
+    } else {
+      setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
     }
   }
 
-  async function saveTracking() {
-    setUpdating(true);
-    const res = await fetch(`/api/admin/orders/${params.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trackingNumber: trackingInput }),
-    });
-    setUpdating(false);
-    if (res.ok) load();
+  async function updateStatus(nextStatus: string) {
+    if (!confirm(`ステータスを「${ORDER_STATUS_LABEL[nextStatus]}」に変更しますか？`)) return;
+    if (nextStatus === "cancelled") {
+      setShowCancelForm(true);
+      return;
+    }
+    const body: Record<string, string> = { status: nextStatus };
+    if (nextStatus === "shipped" && trackingInput) body.trackingNumber = trackingInput;
+    await patch(body);
+  }
+
+  async function confirmCancel() {
+    await patch({ status: "cancelled", cancelReason: cancelReasonInput || undefined });
+    setShowCancelForm(false);
   }
 
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-400 text-sm">読み込み中...</div>;
   if (!order) return <div className="text-slate-400 text-sm py-10 text-center">注文が見つかりません</div>;
 
   const transitions = TRANSITIONS[order.status] ?? [];
+  const taxRate = typeof order.taxRate === "string" ? parseFloat(order.taxRate) : (order.taxRate ?? 0);
+  const taxRatePercent = Math.round(taxRate * 100);
 
   return (
     <div>
@@ -96,21 +107,60 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
         <Link href="/admin/orders" className="text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{order.orderNo}</span>
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            href={`/admin/orders/${order.id}/delivery-note`}
+            className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            納品書を印刷
+          </Link>
+        </div>
       </div>
+
+      {message && (
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{order.orderNo}</h1>
           <p className="text-slate-500 text-sm mt-1">{formatDateTime(order.createdAt)}</p>
         </div>
-        <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${ORDER_STATUS_COLOR[order.status]}`}>
-          {ORDER_STATUS_LABEL[order.status]}
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${ORDER_STATUS_COLOR[order.status]}`}>
+            {ORDER_STATUS_LABEL[order.status]}
+          </span>
+          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${PAYMENT_STATUS_COLOR[order.paymentStatus] ?? "bg-gray-100 text-gray-600"}`}>
+            {PAYMENT_STATUS_LABEL[order.paymentStatus] ?? order.paymentStatus}
+          </span>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 mb-6">
-          {error}
+      {/* Cancel form */}
+      {showCancelForm && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+          <p className="text-sm font-semibold text-red-800 mb-3">キャンセル確認</p>
+          <textarea
+            value={cancelReasonInput}
+            onChange={(e) => setCancelReasonInput(e.target.value)}
+            placeholder="キャンセル理由（任意）"
+            rows={2}
+            className="w-full text-sm border border-red-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white resize-none"
+          />
+          <div className="flex gap-3">
+            <button onClick={confirmCancel} disabled={updating} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+              {updating ? "処理中..." : "キャンセルする"}
+            </button>
+            <button onClick={() => setShowCancelForm(false)} className="px-4 py-2 text-slate-600 hover:text-slate-800 text-sm">戻る</button>
+          </div>
+        </div>
+      )}
+
+      {order.cancelReason && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 mb-6">
+          <span className="font-medium">キャンセル理由：</span>{order.cancelReason}
         </div>
       )}
 
@@ -118,12 +168,9 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
       {transitions.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
           <h2 className="font-semibold text-slate-900 mb-4 text-sm">ステータス操作</h2>
-
-          {(order.status === "confirmed") && (
+          {order.status === "confirmed" && (
             <div className="mb-4">
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                追跡番号（任意）
-              </label>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">追跡番号（任意）</label>
               <div className="flex gap-2">
                 <input
                   value={trackingInput}
@@ -131,25 +178,16 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                   placeholder="例：123456789012"
                   className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button
-                  onClick={saveTracking}
-                  disabled={updating}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
-                >
+                <button onClick={() => patch({ trackingNumber: trackingInput })} disabled={updating} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700">
                   保存
                 </button>
               </div>
             </div>
           )}
-
           <div className="flex flex-wrap gap-3">
             {transitions.map((t) => (
-              <button
-                key={t.next}
-                onClick={() => updateStatus(t.next)}
-                disabled={updating}
-                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${t.color}`}
-              >
+              <button key={t.next} onClick={() => updateStatus(t.next)} disabled={updating}
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${t.color}`}>
                 {updating ? "処理中..." : t.label}
               </button>
             ))}
@@ -157,30 +195,68 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
         </div>
       )}
 
+      {/* Payment Status */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
+        <h2 className="font-semibold text-slate-900 mb-4 text-sm">支払い状況</h2>
+        <div className="flex flex-wrap gap-3">
+          {(["unpaid", "paid", "overdue"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => patch({ paymentStatus: s })}
+              disabled={updating || order.paymentStatus === s}
+              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                order.paymentStatus === s
+                  ? "bg-slate-800 text-white border-slate-800"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              {PAYMENT_STATUS_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Order Items */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200">
-          <div className="px-6 py-4 border-b border-slate-100 font-semibold text-slate-900">注文商品</div>
-          <div className="divide-y divide-slate-100">
-            {order.items.map((item) => (
-              <div key={item.id} className="px-6 py-4 flex justify-between items-start">
-                <div>
-                  <div className="font-medium text-sm text-slate-900">{item.productName}</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {item.boxes} 箱 × {item.bottlesPerBox} 本/箱
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 font-semibold text-slate-900">注文商品</div>
+            <div className="divide-y divide-slate-100">
+              {order.items.map((item) => (
+                <div key={item.id} className="px-6 py-4 flex justify-between items-start">
+                  <div>
+                    <div className="font-medium text-sm text-slate-900">{item.productName}</div>
+                    <div className="text-xs text-slate-500 mt-1">{item.boxes} 箱 × {item.bottlesPerBox} 本/箱</div>
+                    <div className="text-xs text-slate-400 mt-0.5">
+                      掛け率 {Math.round(Number(item.rateApplied) * 100)}%　単価 {formatCurrency(item.unitPricePerBox)}/箱
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    掛け率 {Math.round(item.rateApplied * 100)}%　単価 {formatCurrency(item.unitPricePerBox)}/箱
-                  </div>
+                  <div className="font-semibold text-sm text-slate-900">{formatCurrency(item.subtotal)}</div>
                 </div>
-                <div className="font-semibold text-sm text-slate-900">{formatCurrency(item.subtotal)}</div>
+              ))}
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl space-y-1">
+              <div className="flex justify-between text-sm text-slate-600">
+                <span>税抜小計</span><span>{formatCurrency(order.subtotal)}</span>
               </div>
-            ))}
+              {order.taxAmount > 0 && (
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>消費税（{taxRatePercent}%）</span><span>{formatCurrency(order.taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200">
+                <span>税込合計金額</span>
+                <span className="text-lg">{formatCurrency(order.total)}</span>
+              </div>
+            </div>
           </div>
-          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-between font-bold">
-            <span className="text-slate-900">合計金額</span>
-            <span className="text-lg text-slate-900">{formatCurrency(order.total)}</span>
-          </div>
+
+          {order.memo && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <h3 className="font-semibold text-slate-900 text-sm mb-2">備考・メモ</h3>
+              <p className="text-sm text-slate-700 whitespace-pre-wrap">{order.memo}</p>
+            </div>
+          )}
         </div>
 
         {/* Info Panel */}

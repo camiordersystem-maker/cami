@@ -17,6 +17,7 @@ const EXTRA_MIGRATIONS = [
   "0001_add_terms.sql",
   "0002_add_product_image.sql",
   "0003_add_admin_role.sql",
+  "0004_order_enhancements.sql",
 ];
 
 async function runExtraMigrations() {

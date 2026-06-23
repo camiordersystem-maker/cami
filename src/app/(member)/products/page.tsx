@@ -38,6 +38,7 @@ export default function ProductsPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedAddress, setSelectedAddress] = useState("");
+  const [memo, setMemo] = useState("");
   const [ordering, setOrdering] = useState(false);
   const [error, setError] = useState("");
   const [step, setStep] = useState<"catalog" | "confirm">("catalog");
@@ -99,6 +100,7 @@ export default function ProductsPage() {
       body: JSON.stringify({
         shippingAddressId: selectedAddress,
         items: cart.map((i) => ({ productId: i.productId, boxes: i.boxes })),
+        memo: memo || undefined,
       }),
     });
     const data = await res.json();
@@ -107,7 +109,9 @@ export default function ProductsPage() {
     router.push(`/orders/${data.orderId}`);
   }
 
-  const total = cart.reduce((sum, i) => sum + i.unitPrice * i.boxes, 0);
+  const subtotal = cart.reduce((sum, i) => sum + i.unitPrice * i.boxes, 0);
+  const taxAmount = Math.round(subtotal * 0.10);
+  const total = subtotal + taxAmount;
   const cartTotal = products
     .filter((p) => (quantities[p.id] ?? 0) > 0)
     .reduce((sum, p) => sum + p.wholesalePricePerBox * (quantities[p.id] ?? 0), 0);
@@ -175,17 +179,33 @@ export default function ProductsPage() {
                 </div>
               )}
             </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <h3 className="font-semibold text-slate-900 mb-3 text-sm">備考・メモ（任意）</h3>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="例：〇月〇日着希望、注意事項など"
+                className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
           </div>
 
           <div>
             <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-6">
               <div className="text-sm text-slate-700 space-y-3 mb-5">
                 <div className="flex justify-between text-slate-500">
-                  <span>小計</span>
-                  <span>{fmt(total)}</span>
+                  <span>税抜小計</span>
+                  <span>{fmt(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>消費税（10%）</span>
+                  <span>{fmt(taxAmount)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-slate-900 border-t border-slate-100 pt-3">
-                  <span>合計金額</span>
+                  <span>税込合計</span>
                   <span>{fmt(total)}</span>
                 </div>
               </div>

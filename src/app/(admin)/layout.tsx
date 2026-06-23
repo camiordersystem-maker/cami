@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const baseNavItems = [
   { href: "/admin/dashboard", label: "ダッシュボード" },
   { href: "/admin/orders", label: "注文管理" },
+  { href: "/admin/invoices", label: "請求書管理" },
   { href: "/admin/members", label: "会員管理" },
   { href: "/admin/products", label: "商品管理" },
   { href: "/admin/inventory", label: "在庫管理" },

@@ -20,8 +20,10 @@ export const {
   shippingAddresses,
   products,
   inventory,
+  inventoryReceipts,
   orders,
   orderItems,
+  monthlyInvoices,
   auditLogs,
   terms,
   memberRanksRelations,
@@ -29,8 +31,10 @@ export const {
   shippingAddressesRelations,
   productsRelations,
   inventoryRelations,
+  inventoryReceiptsRelations,
   ordersRelations,
   orderItemsRelations,
+  monthlyInvoicesRelations,
 } = schemaModule;
 
 // ─── Type aliases (DB-agnostic) ───────────────────────────────────────────────
@@ -61,3 +65,7 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type Terms = typeof terms.$inferSelect;
 export type NewTerms = typeof terms.$inferInsert;
+export type InventoryReceipt = typeof inventoryReceipts.$inferSelect;
+export type NewInventoryReceipt = typeof inventoryReceipts.$inferInsert;
+export type MonthlyInvoice = typeof monthlyInvoices.$inferSelect;
+export type NewMonthlyInvoice = typeof monthlyInvoices.$inferInsert;

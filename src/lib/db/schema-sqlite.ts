@@ -155,8 +155,14 @@ export const orders = sqliteTable(
       .notNull()
       .default("pending"),
     subtotal: integer("subtotal").notNull(),
+    taxRate: real("tax_rate").notNull().default(0.10),
+    taxAmount: integer("tax_amount").notNull().default(0),
     total: integer("total").notNull(),
+    paymentStatus: text("payment_status").notNull().default("unpaid"),
+    paymentDueDate: integer("payment_due_date", { mode: "timestamp" }),
     trackingNumber: text("tracking_number"),
+    cancelReason: text("cancel_reason"),
+    memo: text("memo"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -212,6 +218,38 @@ export const auditLogs = sqliteTable(
     index("audit_logs_created_at_idx").on(t.createdAt),
   ]
 );
+
+// ─── inventory_receipts ───────────────────────────────────────────────────────
+
+export const inventoryReceipts = sqliteTable("inventory_receipts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  productId: text("product_id").notNull().references(() => products.id),
+  boxes: integer("boxes").notNull(),
+  previousBoxes: integer("previous_boxes").notNull(),
+  newBoxes: integer("new_boxes").notNull(),
+  note: text("note"),
+  receivedBy: text("received_by").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+// ─── monthly_invoices ─────────────────────────────────────────────────────────
+
+export const monthlyInvoices = sqliteTable("monthly_invoices", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceNo: text("invoice_no").notNull().unique(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  year: integer("year").notNull(),
+  month: integer("month").notNull(),
+  subtotal: integer("subtotal").notNull().default(0),
+  taxAmount: integer("tax_amount").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  paymentStatus: text("payment_status").notNull().default("unpaid"),
+  paymentDueDate: integer("payment_due_date", { mode: "timestamp" }),
+  note: text("note"),
+  issuedAt: integer("issued_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
 
 // ─── terms ────────────────────────────────────────────────────────────────────
 
@@ -287,6 +325,20 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   product: one(products, {
     fields: [orderItems.productId],
     references: [products.id],
+  }),
+}));
+
+export const inventoryReceiptsRelations = relations(inventoryReceipts, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryReceipts.productId],
+    references: [products.id],
+  }),
+}));
+
+export const monthlyInvoicesRelations = relations(monthlyInvoices, ({ one }) => ({
+  member: one(members, {
+    fields: [monthlyInvoices.memberId],
+    references: [members.id],
   }),
 }));
 

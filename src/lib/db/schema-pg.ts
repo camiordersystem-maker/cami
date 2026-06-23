@@ -140,8 +140,14 @@ export const orders = pgTable(
       .references(() => shippingAddresses.id),
     status: orderStatusEnum("status").notNull().default("pending"),
     subtotal: integer("subtotal").notNull(),
+    taxRate: numeric("tax_rate", { precision: 4, scale: 2 }).notNull().default("0.10"),
+    taxAmount: integer("tax_amount").notNull().default(0),
     total: integer("total").notNull(),
+    paymentStatus: text("payment_status").notNull().default("unpaid"),
+    paymentDueDate: timestamp("payment_due_date"),
     trackingNumber: text("tracking_number"),
+    cancelReason: text("cancel_reason"),
+    memo: text("memo"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
@@ -188,6 +194,38 @@ export const auditLogs = pgTable(
     index("audit_logs_created_at_idx").on(t.createdAt),
   ]
 );
+
+// ─── inventory_receipts ───────────────────────────────────────────────────────
+
+export const inventoryReceipts = pgTable("inventory_receipts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  productId: text("product_id").notNull().references(() => products.id),
+  boxes: integer("boxes").notNull(),
+  previousBoxes: integer("previous_boxes").notNull(),
+  newBoxes: integer("new_boxes").notNull(),
+  note: text("note"),
+  receivedBy: text("received_by").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ─── monthly_invoices ─────────────────────────────────────────────────────────
+
+export const monthlyInvoices = pgTable("monthly_invoices", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceNo: text("invoice_no").notNull().unique(),
+  memberId: text("member_id").notNull().references(() => members.id),
+  year: integer("year").notNull(),
+  month: integer("month").notNull(),
+  subtotal: integer("subtotal").notNull().default(0),
+  taxAmount: integer("tax_amount").notNull().default(0),
+  total: integer("total").notNull().default(0),
+  paymentStatus: text("payment_status").notNull().default("unpaid"),
+  paymentDueDate: timestamp("payment_due_date"),
+  note: text("note"),
+  issuedAt: timestamp("issued_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
 
 // ─── terms ────────────────────────────────────────────────────────────────────
 
@@ -263,5 +301,19 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   product: one(products, {
     fields: [orderItems.productId],
     references: [products.id],
+  }),
+}));
+
+export const inventoryReceiptsRelations = relations(inventoryReceipts, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryReceipts.productId],
+    references: [products.id],
+  }),
+}));
+
+export const monthlyInvoicesRelations = relations(monthlyInvoices, ({ one }) => ({
+  member: one(members, {
+    fields: [monthlyInvoices.memberId],
+    references: [members.id],
   }),
 }));

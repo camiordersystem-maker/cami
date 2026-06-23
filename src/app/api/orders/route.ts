@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { z } from "zod";
-import { generateOrderNo } from "@/lib/utils";
+import { generateOrderNo, TAX_RATE } from "@/lib/utils";
 import { sendOrderConfirmation } from "@/lib/email";
 
 const orderItemSchema = z.object({
@@ -15,6 +15,7 @@ const orderItemSchema = z.object({
 const createOrderSchema = z.object({
   shippingAddressId: z.string(),
   items: z.array(orderItemSchema).min(1),
+  memo: z.string().max(500).optional(),
 });
 
 export async function GET() {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   const memberId = session.user.id;
-  const { shippingAddressId, items } = parsed.data;
+  const { shippingAddressId, items, memo } = parsed.data;
 
   try {
     const [member] = await db
@@ -103,6 +104,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const taxAmount = Math.round(subtotal * TAX_RATE);
+    const total = subtotal + taxAmount;
+
     const orderNo = generateOrderNo();
     const [order] = await db
       .insert(schema.orders)
@@ -112,7 +116,10 @@ export async function POST(req: NextRequest) {
         shippingAddressId,
         status: "pending",
         subtotal,
-        total: subtotal,
+        taxRate: String(TAX_RATE),
+        taxAmount,
+        total,
+        memo: memo ?? null,
       })
       .returning();
 

@@ -77,3 +77,26 @@ export const MEMBER_STATUS_COLOR: Record<string, string> = {
   rejected: "bg-red-100 text-red-800",
   suspended: "bg-gray-100 text-gray-600",
 };
+
+export const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  unpaid: "未払い",
+  paid: "支払済み",
+  overdue: "延滞",
+};
+
+export const PAYMENT_STATUS_COLOR: Record<string, string> = {
+  unpaid: "bg-amber-100 text-amber-800",
+  paid: "bg-green-100 text-green-800",
+  overdue: "bg-red-100 text-red-800",
+};
+
+export const TAX_RATE = 0.10;
+
+export function generateInvoiceNo(year: number, month: number): string {
+  const rand = Math.floor(100 + Math.random() * 900);
+  return `INV-${year}${String(month).padStart(2, "0")}-${rand}`;
+}
+
+export function lastDayOfMonth(year: number, month: number): Date {
+  return new Date(year, month, 0, 23, 59, 59);
+}

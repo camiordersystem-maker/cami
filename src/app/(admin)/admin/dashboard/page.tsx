@@ -1,12 +1,20 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, count, sum, desc } from "drizzle-orm";
+import { eq, count, sum, desc, gte, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_COLOR, MEMBER_STATUS_LABEL } from "@/lib/utils";
+import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_COLOR, MEMBER_STATUS_LABEL, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 
 export const metadata = { title: "管理ダッシュボード" };
+
+function getMonthStart(monthsAgo: number) {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  d.setMonth(d.getMonth() - monthsAgo);
+  return d;
+}
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -26,12 +34,45 @@ export default async function AdminDashboardPage() {
     .from(schema.orders)
     .where(eq(schema.orders.status, "delivered"));
 
+  const [unpaidInvoices] = await db
+    .select({ value: sum(schema.monthlyInvoices.total) })
+    .from(schema.monthlyInvoices)
+    .where(eq(schema.monthlyInvoices.paymentStatus, "unpaid"));
+
+  // Monthly sales for last 6 months
+  const sixMonthsAgo = getMonthStart(5);
+  const monthlySalesRaw = await db
+    .select({
+      total: schema.orders.total,
+      createdAt: schema.orders.createdAt,
+    })
+    .from(schema.orders)
+    .where(
+      and(
+        gte(schema.orders.createdAt, sixMonthsAgo),
+        eq(schema.orders.status, "delivered")
+      )
+    );
+
+  const monthlyMap: Record<string, number> = {};
+  for (let i = 5; i >= 0; i--) {
+    const d = getMonthStart(i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthlyMap[key] = 0;
+  }
+  for (const row of monthlySalesRaw) {
+    const d = new Date(row.createdAt);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (key in monthlyMap) monthlyMap[key] += row.total;
+  }
+
   const recentOrders = await db
     .select({
       id: schema.orders.id,
       orderNo: schema.orders.orderNo,
       status: schema.orders.status,
       total: schema.orders.total,
+      paymentStatus: schema.orders.paymentStatus,
       createdAt: schema.orders.createdAt,
       companyName: schema.members.companyName,
     })
@@ -45,6 +86,8 @@ export default async function AdminDashboardPage() {
     .from(schema.members)
     .orderBy(desc(schema.members.createdAt))
     .limit(5);
+
+  const maxMonthly = Math.max(...Object.values(monthlyMap), 1);
 
   return (
     <div>
@@ -77,14 +120,51 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
+      {/* Unpaid invoices alert */}
+      {Number(unpaidInvoices?.value ?? 0) > 0 && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-center justify-between">
+          <div>
+            <div className="font-semibold text-amber-800 text-sm">未払い請求書があります</div>
+            <div className="text-amber-700 text-sm mt-0.5">
+              未収合計：<span className="font-bold">{formatCurrency(Number(unpaidInvoices?.value ?? 0))}</span>
+            </div>
+          </div>
+          <Link href="/admin/invoices" className="text-sm text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
+            請求書管理 →
+          </Link>
+        </div>
+      )}
+
+      {/* Monthly Sales Chart */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8">
+        <h2 className="font-semibold text-slate-900 mb-6">月次売上（過去6ヶ月・配達完了分）</h2>
+        <div className="flex items-end gap-3 h-48">
+          {Object.entries(monthlyMap).map(([key, val]) => {
+            const [y, m] = key.split("-");
+            const heightPct = maxMonthly > 0 ? (val / maxMonthly) * 100 : 0;
+            return (
+              <div key={key} className="flex-1 flex flex-col items-center gap-1">
+                <div className="text-xs font-medium text-slate-600 text-center">{formatCurrency(val)}</div>
+                <div className="w-full flex items-end" style={{ height: "96px" }}>
+                  <div
+                    className="w-full bg-blue-500 rounded-t-md transition-all hover:bg-blue-600"
+                    style={{ height: `${Math.max(4, heightPct)}%` }}
+                  />
+                </div>
+                <div className="text-xs text-slate-500 font-medium">{m}月</div>
+                <div className="text-xs text-slate-400">{y}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">最近の注文</h2>
-            <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">
-              すべて見る →
-            </Link>
+            <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">すべて見る →</Link>
           </div>
           {recentOrders.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">注文がありません</div>
@@ -102,10 +182,13 @@ export default async function AdminDashboardPage() {
                       {order.companyName} · {formatDate(order.createdAt)}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 ml-4 shrink-0">
+                  <div className="flex items-center gap-2 ml-4 shrink-0">
                     <span className="font-medium text-sm text-slate-800">{formatCurrency(order.total)}</span>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${ORDER_STATUS_COLOR[order.status]}`}>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ORDER_STATUS_COLOR[order.status]}`}>
                       {ORDER_STATUS_LABEL[order.status]}
+                    </span>
+                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${PAYMENT_STATUS_COLOR[order.paymentStatus] ?? "bg-gray-100 text-gray-600"}`}>
+                      {PAYMENT_STATUS_LABEL[order.paymentStatus] ?? "—"}
                     </span>
                   </div>
                 </Link>
@@ -118,9 +201,7 @@ export default async function AdminDashboardPage() {
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">最近の登録申請</h2>
-            <Link href="/admin/members" className="text-sm text-blue-600 hover:underline">
-              すべて →
-            </Link>
+            <Link href="/admin/members" className="text-sm text-blue-600 hover:underline">すべて →</Link>
           </div>
           {recentMembers.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">申請がありません</div>

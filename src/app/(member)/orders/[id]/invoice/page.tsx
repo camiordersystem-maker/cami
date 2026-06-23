@@ -37,6 +37,11 @@ export default async function InvoicePage({ params }: { params: { id: string } }
     .from(schema.members)
     .where(eq(schema.members.id, session.user.id));
 
+  const registrationNo = process.env.INVOICE_REGISTRATION_NO ?? "T0000000000000";
+  const taxRate = typeof order.taxRate === "string" ? parseFloat(order.taxRate) : (order.taxRate ?? 0);
+  const taxRatePercent = Math.round(taxRate * 100);
+  const taxAmount = order.taxAmount ?? 0;
+
   return (
     <div className="min-h-screen bg-white">
       {/* Print Controls */}
@@ -56,12 +61,15 @@ export default async function InvoicePage({ params }: { params: { id: string } }
             <div className="text-slate-500 text-sm mt-1">INVOICE</div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-lg text-slate-900">Cami</div>
+            <div className="font-bold text-lg text-slate-900">{process.env.COMPANY_NAME ?? "Cami"}</div>
             <div className="text-sm text-slate-600 mt-1">
-              〒000-0000<br />
-              東京都○○区○○1-2-3<br />
-              TEL: 03-0000-0000<br />
-              Email: info@cami.co.jp
+              〒{process.env.COMPANY_POSTAL_CODE ?? "000-0000"}<br />
+              {process.env.COMPANY_ADDRESS ?? "東京都○○区○○1-2-3"}<br />
+              TEL: {process.env.COMPANY_TEL ?? "03-0000-0000"}<br />
+              Email: {process.env.COMPANY_EMAIL ?? "info@cami.co.jp"}
+            </div>
+            <div className="text-xs text-slate-500 mt-2">
+              登録番号：{registrationNo}
             </div>
           </div>
         </div>
@@ -71,9 +79,7 @@ export default async function InvoicePage({ params }: { params: { id: string } }
           <div className="font-semibold text-slate-900 mb-2 text-sm">請求先</div>
           <div className="text-slate-800">
             <div className="text-lg font-bold">{member?.companyName} 御中</div>
-            <div className="text-sm text-slate-600 mt-1">
-              {member?.contactName} 様
-            </div>
+            <div className="text-sm text-slate-600 mt-1">{member?.contactName} 様</div>
           </div>
         </div>
 
@@ -96,7 +102,7 @@ export default async function InvoicePage({ params }: { params: { id: string } }
               <th className="text-left py-2 font-semibold text-slate-900">商品名</th>
               <th className="text-center py-2 font-semibold text-slate-900">数量</th>
               <th className="text-right py-2 font-semibold text-slate-900">単価（/箱）</th>
-              <th className="text-right py-2 font-semibold text-slate-900">小計</th>
+              <th className="text-right py-2 font-semibold text-slate-900">税抜小計</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -105,7 +111,7 @@ export default async function InvoicePage({ params }: { params: { id: string } }
                 <td className="py-3 text-slate-800">
                   <div>{item.productName}</div>
                   <div className="text-xs text-slate-400">
-                    {item.bottlesPerBox}本/箱　掛け率{Math.round(item.rateApplied * 100)}%
+                    {item.bottlesPerBox}本/箱　掛け率{Math.round(Number(item.rateApplied) * 100)}%　※{taxRatePercent}%
                   </div>
                 </td>
                 <td className="py-3 text-center text-slate-800">{item.boxes} 箱</td>
@@ -119,13 +125,22 @@ export default async function InvoicePage({ params }: { params: { id: string } }
         {/* Totals */}
         <div className="border-t-2 border-slate-900 pt-4 space-y-2 text-sm">
           <div className="flex justify-between text-slate-600">
-            <span>小計</span>
+            <span>税抜小計</span>
             <span>{formatCurrency(order.subtotal)}</span>
           </div>
+          <div className="flex justify-between text-slate-600">
+            <span>消費税（{taxRatePercent}%）</span>
+            <span>{formatCurrency(taxAmount)}</span>
+          </div>
           <div className="flex justify-between text-lg font-bold text-slate-900 border-t border-slate-200 pt-2 mt-2">
-            <span>合計金額</span>
+            <span>税込合計金額</span>
             <span>{formatCurrency(order.total)}</span>
           </div>
+        </div>
+
+        {/* Tax breakdown note for 適格請求書 */}
+        <div className="mt-4 bg-slate-50 rounded-lg px-4 py-3 text-xs text-slate-500">
+          ※印は軽減税率対象外（標準税率 {taxRatePercent}%）です。
         </div>
 
         {/* Shipping Address */}
@@ -157,10 +172,9 @@ export default async function InvoicePage({ params }: { params: { id: string } }
         </div>
 
         <div className="mt-8 text-center text-xs text-slate-400">
-          ご不明な点はお気軽にお問い合わせください。info@cami.co.jp
+          ご不明な点はお気軽にお問い合わせください。{process.env.COMPANY_EMAIL ?? "info@cami.co.jp"}
         </div>
       </div>
-
     </div>
   );
 }

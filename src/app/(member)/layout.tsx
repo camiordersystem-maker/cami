@@ -11,6 +11,7 @@ const navItems = [
   { href: "/orders", label: "注文履歴" },
   { href: "/addresses", label: "配送先管理" },
   { href: "/terms", label: "契約書" },
+  { href: "/account", label: "アカウント設定" },
 ];
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
