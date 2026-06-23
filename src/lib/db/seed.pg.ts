@@ -12,7 +12,7 @@ async function main() {
 
   // ── 1. ランクマスタ
   console.log("📊 Creating member ranks...");
-  const existingRanks = await sql`SELECT id, name FROM member_ranks`;
+  const existingRanks = await sql`SELECT id, name FROM member_ranks` as Array<{ id: string; name: string }>;
   const rankMap: Record<string, string> = {};
 
   if (existingRanks.length === 0) {
@@ -29,7 +29,7 @@ async function main() {
     }
     console.log(`  ✓ ${ranks.length} ranks created`);
   } else {
-    existingRanks.forEach((r: { id: string; name: string }) => (rankMap[r.name] = r.id));
+    existingRanks.forEach((r) => (rankMap[r.name] = r.id));
     console.log(`  ℹ  Ranks already exist (${existingRanks.length})`);
   }
 
@@ -74,8 +74,8 @@ async function main() {
 
   if (existingMembers.length === 0) {
     if (Object.keys(rankMap).length === 0) {
-      const ranks = await sql`SELECT id, name FROM member_ranks`;
-      ranks.forEach((r: { id: string; name: string }) => (rankMap[r.name] = r.id));
+      const ranks = await sql`SELECT id, name FROM member_ranks` as Array<{ id: string; name: string }>;
+      ranks.forEach((r) => (rankMap[r.name] = r.id));
     }
     const memberPassword = await bcrypt.hash("Member1234!", 12);
     const memberId = randomUUID();
