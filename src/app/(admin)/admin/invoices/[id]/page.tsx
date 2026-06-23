@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 
+type SystemSettings = {
+  companyName: string;
+  invoiceRegistrationNo: string;
+};
+
 type OrderItem = {
   id: string;
   productName: string;
@@ -48,13 +53,18 @@ type InvoiceDetail = {
 
 export default function AdminInvoiceDetailPage({ params }: { params: { id: string } }) {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   async function load() {
-    const res = await fetch(`/api/admin/invoices/${params.id}`);
-    if (res.ok) setInvoice(await res.json());
+    const [invoiceRes, settingsRes] = await Promise.all([
+      fetch(`/api/admin/invoices/${params.id}`),
+      fetch("/api/admin/settings"),
+    ]);
+    if (invoiceRes.ok) setInvoice(await invoiceRes.json());
+    if (settingsRes.ok) setSettings(await settingsRes.json());
     setLoading(false);
   }
 
@@ -81,7 +91,7 @@ export default function AdminInvoiceDetailPage({ params }: { params: { id: strin
   if (loading) return <div className="flex items-center justify-center h-64 text-slate-400 text-sm">読み込み中...</div>;
   if (!invoice) return <div className="text-center py-20 text-slate-400">請求書が見つかりません</div>;
 
-  const registrationNo = process.env.NEXT_PUBLIC_INVOICE_REGISTRATION_NO ?? "T0000000000000";
+  const registrationNo = settings?.invoiceRegistrationNo || "T0000000000000";
 
   return (
     <div>
@@ -132,7 +142,7 @@ export default function AdminInvoiceDetailPage({ params }: { params: { id: strin
             <div className="text-slate-500 text-sm mt-1">{invoice.year}年{invoice.month}月分</div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-lg text-slate-900">{process.env.NEXT_PUBLIC_COMPANY_NAME ?? "Cami"}</div>
+            <div className="font-bold text-lg text-slate-900">{settings?.companyName || "Cami"}</div>
             <div className="text-sm text-slate-600 mt-1">
               登録番号：{registrationNo}
             </div>

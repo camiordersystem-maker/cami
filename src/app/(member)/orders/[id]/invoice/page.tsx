@@ -6,6 +6,13 @@ import { redirect, notFound } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import PrintButton from "./PrintButton";
 
+async function getSettings() {
+  try {
+    const [s] = await db.select().from(schema.systemSettings).where(eq(schema.systemSettings.id, "singleton"));
+    return s ?? null;
+  } catch { return null; }
+}
+
 export const metadata = { title: "請求書" };
 
 export default async function InvoicePage({ params }: { params: { id: string } }) {
@@ -37,7 +44,8 @@ export default async function InvoicePage({ params }: { params: { id: string } }
     .from(schema.members)
     .where(eq(schema.members.id, session.user.id));
 
-  const registrationNo = process.env.INVOICE_REGISTRATION_NO ?? "T0000000000000";
+  const settings = await getSettings();
+  const registrationNo = settings?.invoiceRegistrationNo || "T0000000000000";
   const taxRate = typeof order.taxRate === "string" ? parseFloat(order.taxRate) : (order.taxRate ?? 0);
   const taxRatePercent = Math.round(taxRate * 100);
   const taxAmount = order.taxAmount ?? 0;
@@ -61,12 +69,12 @@ export default async function InvoicePage({ params }: { params: { id: string } }
             <div className="text-slate-500 text-sm mt-1">INVOICE</div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-lg text-slate-900">{process.env.COMPANY_NAME ?? "Cami"}</div>
+            <div className="font-bold text-lg text-slate-900">{settings?.companyName || "Cami"}</div>
             <div className="text-sm text-slate-600 mt-1">
-              〒{process.env.COMPANY_POSTAL_CODE ?? "000-0000"}<br />
-              {process.env.COMPANY_ADDRESS ?? "東京都○○区○○1-2-3"}<br />
-              TEL: {process.env.COMPANY_TEL ?? "03-0000-0000"}<br />
-              Email: {process.env.COMPANY_EMAIL ?? "info@cami.co.jp"}
+              {settings?.companyPostalCode && <>〒{settings.companyPostalCode}<br /></>}
+              {settings?.companyAddress && <>{settings.companyAddress}<br /></>}
+              {settings?.companyTel && <>TEL: {settings.companyTel}<br /></>}
+              {settings?.companyEmail && <>Email: {settings.companyEmail}</>}
             </div>
             <div className="text-xs text-slate-500 mt-2">
               登録番号：{registrationNo}
@@ -156,23 +164,8 @@ export default async function InvoicePage({ params }: { params: { id: string } }
           </div>
         )}
 
-        {/* Bank Transfer Info */}
-        <div className="mt-10 bg-slate-50 rounded-xl p-6 text-sm">
-          <div className="font-semibold text-slate-900 mb-3">お振込先</div>
-          <div className="text-slate-700 space-y-1">
-            <div>銀行名：{process.env.BANK_NAME ?? "○○銀行"}</div>
-            <div>支店名：{process.env.BANK_BRANCH ?? "○○支店"}</div>
-            <div>口座種別：{process.env.BANK_ACCOUNT_TYPE ?? "普通"}</div>
-            <div>口座番号：{process.env.BANK_ACCOUNT_NUMBER ?? "1234567"}</div>
-            <div>口座名義：{process.env.BANK_ACCOUNT_NAME ?? "カブシキガイシャカミ"}</div>
-          </div>
-          <div className="mt-3 text-xs text-slate-500">
-            ご入金確認後、発送手続きを行います。振込手数料はお客様負担にてお願いいたします。
-          </div>
-        </div>
-
         <div className="mt-8 text-center text-xs text-slate-400">
-          ご不明な点はお気軽にお問い合わせください。{process.env.COMPANY_EMAIL ?? "info@cami.co.jp"}
+          ご不明な点はお気軽にお問い合わせください。{settings?.supportEmail || settings?.companyEmail || ""}
         </div>
       </div>
     </div>

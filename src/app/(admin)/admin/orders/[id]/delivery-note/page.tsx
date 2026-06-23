@@ -6,11 +6,20 @@ import { redirect, notFound } from "next/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import PrintButton from "@/app/(member)/orders/[id]/invoice/PrintButton";
 
+async function getSettings() {
+  try {
+    const [s] = await db.select().from(schema.systemSettings).where(eq(schema.systemSettings.id, "singleton"));
+    return s ?? null;
+  } catch { return null; }
+}
+
 export const metadata = { title: "納品書" };
 
 export default async function DeliveryNotePage({ params }: { params: { id: string } }) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") redirect("/login");
+
+  const settings = await getSettings();
 
   const [order] = await db
     .select()
@@ -53,11 +62,11 @@ export default async function DeliveryNotePage({ params }: { params: { id: strin
             <div className="text-slate-500 text-sm mt-1">DELIVERY NOTE</div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-lg text-slate-900">{process.env.COMPANY_NAME ?? "Cami"}</div>
+            <div className="font-bold text-lg text-slate-900">{settings?.companyName || "Cami"}</div>
             <div className="text-sm text-slate-600 mt-1">
-              〒{process.env.COMPANY_POSTAL_CODE ?? "000-0000"}<br />
-              {process.env.COMPANY_ADDRESS ?? "東京都○○区○○1-2-3"}<br />
-              TEL: {process.env.COMPANY_TEL ?? "03-0000-0000"}
+              {settings?.companyPostalCode && <>〒{settings.companyPostalCode}<br /></>}
+              {settings?.companyAddress && <>{settings.companyAddress}<br /></>}
+              {settings?.companyTel && <>TEL: {settings.companyTel}</>}
             </div>
           </div>
         </div>

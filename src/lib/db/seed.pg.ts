@@ -92,6 +92,16 @@ async function main() {
     console.log(`  ℹ  Test member already exists`);
   }
 
+  // ── 5. システム設定（初期行）
+  console.log("⚙️  Initializing system settings...");
+  const existingSettings = await sql`SELECT id FROM system_settings WHERE id = 'singleton'`;
+  if (existingSettings.length === 0) {
+    await sql`INSERT INTO system_settings (id) VALUES ('singleton')`;
+    console.log("  ✓ System settings row created");
+  } else {
+    console.log("  ℹ  System settings already initialized");
+  }
+
   console.log("\n✅ Seed completed!");
   console.log(`  管理者: ${adminEmail} / ${adminPassword}`);
   console.log(`  店舗:   test-salon@example.com / Member1234!\n`);

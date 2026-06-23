@@ -3,6 +3,7 @@ CREATE TABLE `admins` (
 	`email` text NOT NULL,
 	`password` text NOT NULL,
 	`name` text NOT NULL,
+	`role` text NOT NULL DEFAULT 'superadmin',
 	`is_active` integer DEFAULT true NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
@@ -83,8 +84,14 @@ CREATE TABLE `orders` (
 	`shipping_address_id` text NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
 	`subtotal` integer NOT NULL,
+	`tax_rate` real NOT NULL DEFAULT 0.10,
+	`tax_amount` integer NOT NULL DEFAULT 0,
 	`total` integer NOT NULL,
+	`payment_status` text NOT NULL DEFAULT 'unpaid',
+	`payment_due_date` integer,
 	`tracking_number` text,
+	`cancel_reason` text,
+	`memo` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	FOREIGN KEY (`member_id`) REFERENCES `members`(`id`) ON UPDATE no action ON DELETE no action,
@@ -98,6 +105,7 @@ CREATE TABLE `products` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`description` text,
+	`image_url` text,
 	`retail_price` integer DEFAULT 3880 NOT NULL,
 	`bottles_per_box` integer DEFAULT 24 NOT NULL,
 	`is_active` integer DEFAULT true NOT NULL,
@@ -119,4 +127,61 @@ CREATE TABLE `shipping_addresses` (
 	`deleted_at` integer,
 	`created_at` integer NOT NULL,
 	FOREIGN KEY (`member_id`) REFERENCES `members`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `terms` (
+	`id` text PRIMARY KEY NOT NULL,
+	`content` text NOT NULL DEFAULT '',
+	`is_published` integer NOT NULL DEFAULT false,
+	`published_at` integer,
+	`version` integer NOT NULL DEFAULT 1,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	`updated_by` text NOT NULL DEFAULT 'system'
+);
+--> statement-breakpoint
+CREATE TABLE `inventory_receipts` (
+	`id` text PRIMARY KEY NOT NULL,
+	`product_id` text NOT NULL,
+	`boxes` integer NOT NULL,
+	`previous_boxes` integer NOT NULL,
+	`new_boxes` integer NOT NULL,
+	`note` text,
+	`received_by` text NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE TABLE `monthly_invoices` (
+	`id` text PRIMARY KEY NOT NULL,
+	`invoice_no` text NOT NULL,
+	`member_id` text NOT NULL,
+	`year` integer NOT NULL,
+	`month` integer NOT NULL,
+	`subtotal` integer NOT NULL DEFAULT 0,
+	`tax_amount` integer NOT NULL DEFAULT 0,
+	`total` integer NOT NULL DEFAULT 0,
+	`payment_status` text NOT NULL DEFAULT 'unpaid',
+	`payment_due_date` integer,
+	`note` text,
+	`issued_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	FOREIGN KEY (`member_id`) REFERENCES `members`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `monthly_invoices_invoice_no_unique` ON `monthly_invoices` (`invoice_no`);--> statement-breakpoint
+CREATE UNIQUE INDEX `monthly_invoices_member_year_month_unique` ON `monthly_invoices` (`member_id`, `year`, `month`);--> statement-breakpoint
+CREATE TABLE `system_settings` (
+	`id` text PRIMARY KEY NOT NULL DEFAULT 'singleton',
+	`company_name` text NOT NULL DEFAULT '',
+	`company_postal_code` text NOT NULL DEFAULT '',
+	`company_address` text NOT NULL DEFAULT '',
+	`company_tel` text NOT NULL DEFAULT '',
+	`company_email` text NOT NULL DEFAULT '',
+	`invoice_registration_no` text NOT NULL DEFAULT '',
+	`support_email` text NOT NULL DEFAULT '',
+	`low_stock_threshold` integer NOT NULL DEFAULT 10,
+	`updated_at` integer NOT NULL,
+	`updated_by` text
 );

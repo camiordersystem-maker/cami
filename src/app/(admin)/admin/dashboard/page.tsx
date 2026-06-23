@@ -37,7 +37,8 @@ export default async function AdminDashboardPage() {
   const [unpaidInvoices] = await db
     .select({ value: sum(schema.monthlyInvoices.total) })
     .from(schema.monthlyInvoices)
-    .where(eq(schema.monthlyInvoices.paymentStatus, "unpaid"));
+    .where(eq(schema.monthlyInvoices.paymentStatus, "unpaid"))
+    .catch(() => [null]);
 
   // Monthly sales for last 6 months
   const sixMonthsAgo = getMonthStart(5);
@@ -79,7 +80,8 @@ export default async function AdminDashboardPage() {
     .from(schema.orders)
     .leftJoin(schema.members, eq(schema.orders.memberId, schema.members.id))
     .orderBy(desc(schema.orders.createdAt))
-    .limit(8);
+    .limit(8)
+    .catch(() => []);
 
   const recentMembers = await db
     .select()

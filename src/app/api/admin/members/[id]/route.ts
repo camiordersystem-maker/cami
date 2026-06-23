@@ -26,25 +26,40 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [member] = await db.select().from(schema.members).where(eq(schema.members.id, params.id));
-  if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const [member] = await db
+      .select({
+        id: schema.members.id, email: schema.members.email, password: schema.members.password,
+        companyName: schema.members.companyName, contactName: schema.members.contactName,
+        phone: schema.members.phone, address: schema.members.address,
+        businessDescription: schema.members.businessDescription, status: schema.members.status,
+        rankId: schema.members.rankId, createdAt: schema.members.createdAt, updatedAt: schema.members.updatedAt,
+      })
+      .from(schema.members)
+      .where(eq(schema.members.id, params.id));
 
-  const [rank] = await db.select({ id: schema.memberRanks.id, name: schema.memberRanks.name, rate: schema.memberRanks.rate })
-    .from(schema.memberRanks).where(eq(schema.memberRanks.id, member.rankId));
+    if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const orders = await db
-    .select({ id: schema.orders.id, orderNo: schema.orders.orderNo, status: schema.orders.status, total: schema.orders.total, createdAt: schema.orders.createdAt })
-    .from(schema.orders)
-    .where(eq(schema.orders.memberId, params.id))
-    .orderBy(desc(schema.orders.createdAt));
+    const [rank] = await db.select({ id: schema.memberRanks.id, name: schema.memberRanks.name, rate: schema.memberRanks.rate })
+      .from(schema.memberRanks).where(eq(schema.memberRanks.id, member.rankId));
 
-  const addresses = await db
-    .select({ id: schema.shippingAddresses.id, label: schema.shippingAddresses.label, prefecture: schema.shippingAddresses.prefecture, address1: schema.shippingAddresses.address1, isDefault: schema.shippingAddresses.isDefault })
-    .from(schema.shippingAddresses)
-    .where(and(eq(schema.shippingAddresses.memberId, params.id), isNull(schema.shippingAddresses.deletedAt)));
+    const orders = await db
+      .select({ id: schema.orders.id, orderNo: schema.orders.orderNo, status: schema.orders.status, total: schema.orders.total, createdAt: schema.orders.createdAt })
+      .from(schema.orders)
+      .where(eq(schema.orders.memberId, params.id))
+      .orderBy(desc(schema.orders.createdAt));
 
-  const { password: _, ...memberData } = member;
-  return NextResponse.json({ ...memberData, rank: rank ?? null, orders, addresses });
+    const addresses = await db
+      .select({ id: schema.shippingAddresses.id, label: schema.shippingAddresses.label, prefecture: schema.shippingAddresses.prefecture, address1: schema.shippingAddresses.address1, isDefault: schema.shippingAddresses.isDefault })
+      .from(schema.shippingAddresses)
+      .where(and(eq(schema.shippingAddresses.memberId, params.id), isNull(schema.shippingAddresses.deletedAt)));
+
+    const { password: _, ...memberData } = member;
+    return NextResponse.json({ ...memberData, rank: rank ?? null, orders, addresses });
+  } catch (e) {
+    console.error("admin member GET error:", e);
+    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
+  }
 }
 
 export async function PATCH(

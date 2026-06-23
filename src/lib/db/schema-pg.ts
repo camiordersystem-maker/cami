@@ -227,6 +227,22 @@ export const monthlyInvoices = pgTable("monthly_invoices", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ─── system_settings ──────────────────────────────────────────────────────────
+
+export const systemSettings = pgTable("system_settings", {
+  id: text("id").primaryKey().default("singleton"),
+  companyName: text("company_name").notNull().default(""),
+  companyPostalCode: text("company_postal_code").notNull().default(""),
+  companyAddress: text("company_address").notNull().default(""),
+  companyTel: text("company_tel").notNull().default(""),
+  companyEmail: text("company_email").notNull().default(""),
+  invoiceRegistrationNo: text("invoice_registration_no").notNull().default(""),
+  supportEmail: text("support_email").notNull().default(""),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: text("updated_by"),
+});
+
 // ─── terms ────────────────────────────────────────────────────────────────────
 
 export const terms = pgTable("terms", {

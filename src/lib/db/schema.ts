@@ -26,6 +26,7 @@ export const {
   monthlyInvoices,
   auditLogs,
   terms,
+  systemSettings,
   memberRanksRelations,
   membersRelations,
   shippingAddressesRelations,
@@ -69,3 +70,5 @@ export type InventoryReceipt = typeof inventoryReceipts.$inferSelect;
 export type NewInventoryReceipt = typeof inventoryReceipts.$inferInsert;
 export type MonthlyInvoice = typeof monthlyInvoices.$inferSelect;
 export type NewMonthlyInvoice = typeof monthlyInvoices.$inferInsert;
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type NewSystemSettings = typeof systemSettings.$inferInsert;

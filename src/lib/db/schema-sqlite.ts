@@ -251,6 +251,22 @@ export const monthlyInvoices = sqliteTable("monthly_invoices", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+// ─── system_settings ──────────────────────────────────────────────────────────
+
+export const systemSettings = sqliteTable("system_settings", {
+  id: text("id").primaryKey().default("singleton"),
+  companyName: text("company_name").notNull().default(""),
+  companyPostalCode: text("company_postal_code").notNull().default(""),
+  companyAddress: text("company_address").notNull().default(""),
+  companyTel: text("company_tel").notNull().default(""),
+  companyEmail: text("company_email").notNull().default(""),
+  invoiceRegistrationNo: text("invoice_registration_no").notNull().default(""),
+  supportEmail: text("support_email").notNull().default(""),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(10),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedBy: text("updated_by"),
+});
+
 // ─── terms ────────────────────────────────────────────────────────────────────
 
 export const terms = sqliteTable("terms", {
@@ -364,6 +380,8 @@ export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
 export type Terms = typeof terms.$inferSelect;
 export type NewTerms = typeof terms.$inferInsert;
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type NewSystemSettings = typeof systemSettings.$inferInsert;
 
 // ─── Status type aliases ──────────────────────────────────────────────────────
 
