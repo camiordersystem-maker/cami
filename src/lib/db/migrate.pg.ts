@@ -14,6 +14,13 @@ const migrationsFolder = path.join(
   "src/lib/db/migrations/pg"
 );
 
-console.log("🗄️  Running PostgreSQL migrations...");
-await migrate(db, { migrationsFolder });
-console.log("✅ PostgreSQL migrations completed");
+async function main() {
+  console.log("🗄️  Running PostgreSQL migrations...");
+  await migrate(db, { migrationsFolder });
+  console.log("✅ PostgreSQL migrations completed");
+}
+
+main().catch((err) => {
+  console.error("❌ Migration failed:", err);
+  process.exit(1);
+});
