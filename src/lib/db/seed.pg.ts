@@ -1,7 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
-import * as schema from "./schema.pg";
+import * as schema from "./schema.pg.ts";
 import bcrypt from "bcryptjs";
 
 const url = process.env.DATABASE_URL;
