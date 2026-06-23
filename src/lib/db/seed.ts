@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { eq } from "drizzle-orm";
-import * as schema from "./schema";
+import * as schema from "./schema-sqlite";
 import bcrypt from "bcryptjs";
 
 const dbPath = process.env.SQLITE_PATH ?? "./local.db";
