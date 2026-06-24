@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cami 受発注システム 画面設計書</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN','Hiragino Sans',Meiryo,sans-serif;font-size:12px;color:#202124;background:#f8f9fa;}
+.app{display:flex;flex-direction:column;height:100vh;}
+.toolbar{background:#1b6b45;color:#fff;padding:6px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;flex-shrink:0;border-bottom:1px solid #145738;}
+.toolbar-sub{font-size:11px;font-weight:400;opacity:.75;margin-left:4px;}
+.legend{margin-left:auto;display:flex;gap:12px;font-size:10px;font-weight:400;opacity:.85;}
+.legend span{display:flex;align-items:center;gap:4px;}
+.legend-dot{width:10px;height:10px;border-radius:2px;}
+.body{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:176px;background:#fff;border-right:1px solid #e0e0e0;overflow-y:auto;flex-shrink:0;}
+.sidebar-group{padding:8px 10px 3px;font-size:10px;font-weight:600;color:#5f6368;letter-spacing:.06em;border-top:1px solid #e8eaed;margin-top:2px;}
+.sidebar-group:first-child{border-top:none;}
+.sid-item{padding:5px 12px;cursor:pointer;font-size:11px;color:#3c4043;border-left:3px solid transparent;}
+.sid-item:hover{background:#f1f3f4;}
+.sid-item.active{background:#e6f4ea;color:#137333;font-weight:600;border-left-color:#1b6b45;}
+.main{flex:1;overflow:auto;background:#fff;}
+.sheet-header{background:#e6f4ea;border-bottom:2px solid #1b6b45;padding:10px 16px;}
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 16px;margin-bottom:8px;}
+.info-item label{font-size:9px;font-weight:700;color:#1b6b45;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:2px;}
+.info-item span{font-size:12px;color:#202124;font-weight:500;}
+.info-item.full{grid-column:1/-1;border-top:1px solid #c6e8d3;padding-top:6px;margin-top:2px;}
+.capture-zone{background:#f8f9fa;border:1.5px dashed #bdc1c6;border-radius:4px;margin:10px 16px;height:80px;display:flex;align-items:center;justify-content:center;color:#9aa0a6;font-size:11px;gap:6px;}
+.capture-zone span{font-size:18px;opacity:.5;}
+.section-title{padding:6px 16px 3px;background:#f1f3f4;border-bottom:1px solid #e0e0e0;border-top:1px solid #e0e0e0;font-size:10px;font-weight:700;color:#5f6368;letter-spacing:.06em;text-transform:uppercase;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;}
+colgroup .c1{width:44px;}
+colgroup .c2{width:170px;}
+colgroup .c3{width:120px;}
+colgroup .c4{width:90px;}
+colgroup .c5{width:68px;}
+colgroup .c6{width:130px;}
+colgroup .c7{width:auto;}
+thead th{background:#1b6b45;color:#fff;padding:6px 10px;font-size:11px;font-weight:600;text-align:left;border-right:1px solid #145738;white-space:nowrap;position:sticky;top:0;z-index:1;}
+thead th:last-child{border-right:none;}
+tbody td{padding:5px 10px;font-size:11px;border-bottom:1px solid #e8eaed;border-right:1px solid #e8eaed;vertical-align:top;line-height:1.5;}
+tbody td:last-child{border-right:none;}
+tbody tr:nth-child(even) td{background:#f8fffe;}
+tbody tr:hover td{background:#e6f4ea;}
+.no{text-align:center;color:#9aa0a6;font-size:11px;}
+.tabs{background:#f1f3f4;border-top:1px solid #e0e0e0;display:flex;overflow-x:auto;flex-shrink:0;padding:0 4px;gap:1px;scrollbar-width:thin;}
+.tabs::-webkit-scrollbar{height:4px;}
+.tabs::-webkit-scrollbar-thumb{background:#bdc1c6;border-radius:2px;}
+.tab{padding:6px 10px;font-size:10px;cursor:pointer;white-space:nowrap;color:#5f6368;border:1px solid transparent;border-bottom:none;border-radius:4px 4px 0 0;flex-shrink:0;margin-top:4px;font-weight:500;}
+.tab:hover{background:#e8eaed;}
+.tab.active{background:#fff;border-color:#e0e0e0;color:#1b6b45;font-weight:700;border-bottom:1px solid #fff;margin-bottom:-1px;}
+.tab.admin-tab{border-top:3px solid #1b6b45;}
+.tab.member-tab{border-top:3px solid #1a73e8;}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;white-space:nowrap;}
+.b-text{background:#e6f4ea;color:#137333;}
+.b-pw{background:#fce8e8;color:#c5221f;}
+.b-num{background:#fef0c7;color:#7a4f00;}
+.b-area{background:#e6f4ea;color:#137333;}
+.b-sel{background:#fef0c7;color:#7a4f00;}
+.b-chk{background:#ede7f6;color:#4527a0;}
+.b-btn{background:#fff9c4;color:#5d4037;}
+.b-link{background:#e8f0fe;color:#1558d6;}
+.b-disp{background:#e8f0fe;color:#1558d6;}
+.b-cond{background:#f1f3f4;color:#5f6368;}
+.b-tbl{background:#ede7f6;color:#4527a0;}
+.b-graph{background:#fce4ec;color:#880e4f;}
+.b-file{background:#fef0c7;color:#7a4f00;}
+.b-filter{background:#e1f5fe;color:#01579b;}
+.b-form{background:#f1f3f4;color:#3c4043;}
+.b-grid{background:#ede7f6;color:#4527a0;}
+.req{background:#fce8e8;color:#c5221f;display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;}
+.opt{background:#e6f4ea;color:#137333;display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;}
+.url{font-family:'Courier New',Courier,monospace;font-size:11px;background:#f1f3f4;padding:1px 5px;border-radius:3px;color:#137333;}
+@media print{
+  .sidebar,.tabs{display:none;}
+  .main{overflow:visible;}
+  .sheet{page-break-after:always;}
+  .app{height:auto;}
+  .body{overflow:visible;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="toolbar">
+  &#9783; Cami 受発注システム — 画面設計書
+  <span class="toolbar-sub">v1.0 &nbsp;|&nbsp; 全24画面</span>
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#1b6b45;"></span>管理者（本部）</span>
+    <span><span class="legend-dot" style="background:#1a73e8;"></span>店舗（会員）</span>
+  </div>
+</div>
+<div class="body">
+<div class="sidebar" id="sidebar"></div>
+<div class="main" id="main"></div>
+</div>
+<div class="tabs" id="tabs"></div>
+</div>
+
+<script>
+const screens = [
+{id:'ADM-001',name:'ログイン（管理者）',group:'admin',target:'管理者（本部スタッフ）',url:'/login',
+desc:'管理者がシステムにログインする画面。メールアドレスとパスワードで認証し、成功後にダッシュボードへ遷移する。',
+items:[
+{no:'1',name:'Camiロゴ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'ブランドロゴを表示'},
+{no:'2',name:'タイトル',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'「管理システム（本部）」固定テキスト'},
+{no:'3',name:'メールアドレス',type:'text',typeL:'テキスト入力',input:'email',req:'req',val:'メール形式',note:''},
+{no:'4',name:'パスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'1文字以上',note:''},
+{no:'5',name:'ログインボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'クリックで認証処理を実行。失敗時エラー表示'},
+{no:'6',name:'エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'認証失敗時のみ表示。「メールアドレスまたはパスワードが正しくありません」'},
+]},
+
+{id:'ADM-002',name:'ダッシュボード',group:'admin',target:'管理者',url:'/admin/dashboard',
+desc:'ログイン直後に表示するKPI概要画面。注文・会員・売上のサマリーカード、未払いアラート、月次売上グラフ、最近の注文・申請一覧を表示する。',
+items:[
+{no:'1',name:'総注文数カード',type:'disp',typeL:'数値表示',input:'—',req:'—',val:'—',note:'全期間の注文件数'},
+{no:'2',name:'確認待ち注文数カード',type:'disp',typeL:'数値表示＋リンク',input:'—',req:'—',val:'—',note:'クリックで注文管理へ遷移'},
+{no:'3',name:'審査待ち会員数カード',type:'disp',typeL:'数値表示＋リンク',input:'—',req:'—',val:'—',note:'クリックで会員管理（審査中タブ）へ遷移'},
+{no:'4',name:'累計売上カード',type:'disp',typeL:'金額表示',input:'—',req:'—',val:'—',note:'配達完了注文の税込合計'},
+{no:'5',name:'未払い請求書アラートバナー',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'未払い請求書がある場合のみ表示。未収合計金額・請求書管理へのリンクを含む'},
+{no:'6',name:'月次売上バーチャート',type:'graph',typeL:'グラフ',input:'—',req:'—',val:'—',note:'過去6ヶ月・配達完了分。各バーに金額ラベル'},
+{no:'7',name:'最近の注文テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'注文番号/店舗名/金額/注文ステータス/支払いステータス/日時。最大8件。行クリックで注文詳細へ'},
+{no:'8',name:'最近の登録申請テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'店舗名/ステータス/登録日。最大5件。行クリックで会員詳細へ'},
+]},
+
+{id:'ADM-003',name:'注文管理一覧',group:'admin',target:'管理者',url:'/admin/orders',
+desc:'全注文をステータスタブで絞り込んで一覧表示する。CSV出力も可能。',
+items:[
+{no:'1',name:'ステータスタブ',type:'filter',typeL:'フィルター（タブ）',input:'—',req:'—',val:'—',note:'全て / 確認待ち / 確認済み / 発送済み / 配達完了 / キャンセル。各タブに件数バッジ'},
+{no:'2',name:'注文一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'注文番号/店舗名/税込金額/注文ステータス/支払いステータス/注文日。行クリックで注文詳細へ'},
+{no:'3',name:'CSV出力ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'注文一覧をCSVダウンロード（全件）'},
+{no:'4',name:'空状態メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'注文がない場合「注文がありません」'},
+]},
+
+{id:'ADM-004',name:'注文詳細',group:'admin',target:'管理者',url:'/admin/orders/[id]',
+desc:'注文の詳細確認・ステータス変更・支払い管理・追跡番号入力・メモ記入・納品書印刷を行う。',
+items:[
+{no:'1',name:'← 注文一覧に戻る',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'注文番号',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'例: CAM-20260624-001'},
+{no:'3',name:'ステータスバッジ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'確認待ち / 確認済み / 発送済み / 配達完了 / キャンセル'},
+{no:'4',name:'注文日時',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'5',name:'店舗名・担当者・メール',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'6',name:'注文品目テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 箱数 / 1箱単価（税抜）/ 小計（税抜）'},
+{no:'7',name:'金額サマリー',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'税抜小計 / 消費税（10%）/ 税込合計'},
+{no:'8',name:'配送先',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'ラベル名・郵便番号・都道府県・住所・受取人・電話'},
+{no:'9',name:'ステータス変更ボタン群',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'遷移可能なステータスのみ活性。確認待→確認済/キャンセル、確認済→発送済/キャンセル、発送済→配達完了'},
+{no:'10',name:'キャンセル理由入力',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'500文字以内',note:'キャンセル選択時に入力欄を表示。入力後「キャンセルを実行」ボタン'},
+{no:'11',name:'追跡番号',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'—',note:'任意入力。保存ボタンあり'},
+{no:'12',name:'支払いステータス変更ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'未払い / 支払済み / 延滞 を切り替え'},
+{no:'13',name:'メモ欄',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'—',note:'本部内部メモ。店舗側注文詳細にも表示される'},
+{no:'14',name:'納品書リンクボタン',type:'link',typeL:'リンクボタン',input:'—',req:'—',val:'—',note:'別タブで納品書印刷画面を開く'},
+]},
+
+{id:'ADM-005',name:'会員管理一覧',group:'admin',target:'管理者',url:'/admin/members',
+desc:'全会員（店舗）をステータスタブで絞り込んで一覧表示する。CSV出力・新規店舗登録も可能。',
+items:[
+{no:'1',name:'ステータスタブ',type:'filter',typeL:'フィルター（タブ）',input:'—',req:'—',val:'—',note:'全て / 審査中 / 承認済み / 却下 / 停止中。各タブに件数バッジ'},
+{no:'2',name:'会員一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'店舗名 / 担当者 / メール / 電話 / ランク / ステータス / 登録日。行クリックで会員詳細へ'},
+{no:'3',name:'新規店舗登録ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'本部が直接店舗アカウントを作成する画面へ遷移'},
+{no:'4',name:'CSV出力ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'会員一覧をCSVダウンロード'},
+{no:'5',name:'空状態メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'「該当する会員がいません」'},
+]},
+
+{id:'ADM-006',name:'会員詳細',group:'admin',target:'管理者',url:'/admin/members/[id]',
+desc:'会員（店舗）の詳細確認・基本情報編集・ランク変更・ステータス操作・注文履歴確認を行う。',
+items:[
+{no:'1',name:'店舗名・登録日ヘッダー',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'ステータスバッジ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'審査中 / 承認済み / 却下 / 停止中'},
+{no:'3',name:'成功/エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'各操作の結果をインライン表示'},
+{no:'4',name:'基本情報パネル（表示モード）',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'店舗名 / 担当者 / メール / 電話 / 住所 / 事業概要'},
+{no:'5',name:'編集ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'基本情報を編集モードに切り替え'},
+{no:'6',name:'基本情報編集フォーム（編集モード）',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'各項目1文字以上',note:'店舗名・担当者・電話・住所・事業概要を編集。保存/キャンセルボタンあり'},
+{no:'7',name:'ランク設定セレクト',type:'sel',typeL:'セレクト',input:'—',req:'—',val:'—',note:'スタンダード / シルバー / ゴールド / プラチナ。現在ランク名と掛け率を表示'},
+{no:'8',name:'ランク変更ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'現在ランクと同じ選択の場合は非活性'},
+{no:'9',name:'ステータス操作ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'審査中→承認/却下、承認済み→停止、停止/却下→再承認。現在のステータスに応じて表示切替'},
+{no:'10',name:'登録配送先一覧',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'ラベル名 / 都道府県 / 住所 / デフォルトフラグ'},
+{no:'11',name:'注文履歴テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'注文番号 / 税込金額 / ステータス / 注文日。行クリックで注文詳細へ'},
+]},
+
+{id:'ADM-007',name:'新規店舗登録',group:'admin',target:'管理者（編集者以上）',url:'/admin/members/new',
+desc:'本部が直接店舗アカウントを作成する。作成時点でステータスは「承認済み」となる。',
+items:[
+{no:'1',name:'店舗名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'2',name:'担当者名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'3',name:'メールアドレス',type:'text',typeL:'テキスト入力',input:'email',req:'req',val:'メール形式・重複不可',note:''},
+{no:'4',name:'パスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'8文字以上',note:''},
+{no:'5',name:'電話番号',type:'text',typeL:'テキスト入力',input:'tel',req:'req',val:'1文字以上',note:''},
+{no:'6',name:'住所',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'7',name:'事業概要',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'—',note:''},
+{no:'8',name:'ランク選択',type:'sel',typeL:'セレクト',input:'—',req:'req',val:'選択必須',note:'スタンダード / シルバー / ゴールド / プラチナ'},
+{no:'9',name:'登録ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'成功後は作成した会員の詳細画面へ遷移'},
+{no:'10',name:'エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'バリデーションエラー・重複エラー等をインライン表示'},
+]},
+
+{id:'ADM-008',name:'商品管理',group:'admin',target:'管理者（編集者以上）',url:'/admin/products',
+desc:'商品マスタの追加・編集・画像設定・販売停止/再開を管理する。',
+items:[
+{no:'1',name:'商品一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'サムネイル / 商品名 / 商品説明 / 定価×本数 / 在庫箱数 / 販売ステータス'},
+{no:'2',name:'商品追加ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'クリックでページ上部に追加フォームをアコーディオン展開'},
+{no:'3',name:'商品名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:'追加・編集フォーム内'},
+{no:'4',name:'商品説明',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'—',note:''},
+{no:'5',name:'商品画像アップロード',type:'file',typeL:'ファイル選択',input:'file',req:'opt',val:'JPG / PNG / WebP / GIF・3MB以内',note:'選択後プレビュー表示。×ボタンで削除'},
+{no:'6',name:'定価（円/本）',type:'num',typeL:'数値入力',input:'number',req:'req',val:'1以上',note:'1本あたりの定価（税込）'},
+{no:'7',name:'箱あたり本数',type:'num',typeL:'数値入力',input:'number',req:'req',val:'1以上',note:''},
+{no:'8',name:'販売中チェック',type:'chk',typeL:'チェックボックス',input:'—',req:'opt',val:'—',note:'OFFで店舗側から注文不可。デフォルトON'},
+{no:'9',name:'保存ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'追加・編集いずれも同一ボタン'},
+{no:'10',name:'編集ボタン（各行）',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'クリックで当該商品の値をフォームに展開'},
+{no:'11',name:'停止/再開ボタン（各行）',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'販売停止⇔再開をトグル'},
+]},
+
+{id:'ADM-009',name:'在庫管理',group:'admin',target:'管理者（編集者以上）',url:'/admin/inventory',
+desc:'商品ごとの在庫箱数確認・入庫登録・入庫履歴確認を行う。閾値以下の在庫は警告表示。',
+items:[
+{no:'1',name:'在庫状況テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 在庫箱数。閾値以下の場合は低在庫バッジを表示'},
+{no:'2',name:'CSV出力ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'在庫一覧をCSVダウンロード'},
+{no:'3',name:'入庫対象商品セレクト',type:'sel',typeL:'セレクト',input:'—',req:'req',val:'選択必須',note:'入庫登録フォーム内'},
+{no:'4',name:'入庫箱数',type:'num',typeL:'数値入力',input:'number',req:'req',val:'1以上',note:''},
+{no:'5',name:'メモ（入庫備考）',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'—',note:''},
+{no:'6',name:'入庫登録ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'在庫を加算し入庫履歴を記録。低在庫解消の場合メール通知も送信'},
+{no:'7',name:'入庫履歴テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 入庫数 / 入庫前在庫 / 入庫後在庫 / メモ / 登録日時'},
+]},
+
+{id:'ADM-010',name:'ランク管理',group:'admin',target:'管理者（スーパー管理者）',url:'/admin/ranks',
+desc:'卸値ランクのマスタ管理。ランク名・掛け率・月最低箱数・説明を設定する。',
+items:[
+{no:'1',name:'ランク一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'ランク名 / 掛け率（%）/ 月最低箱数 / 説明'},
+{no:'2',name:'ランク名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上・重複不可',note:'例: スタンダード、ゴールド'},
+{no:'3',name:'掛け率',type:'num',typeL:'数値入力',input:'number',req:'req',val:'0.01〜1.00の小数',note:'定価に対する卸値率（例: 0.50 = 50%）'},
+{no:'4',name:'月最低箱数',type:'num',typeL:'数値入力',input:'number',req:'req',val:'0以上',note:'このランク適用の目安（参考値）'},
+{no:'5',name:'説明',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'—',note:''},
+{no:'6',name:'追加ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'ランクを新規追加'},
+]},
+
+{id:'ADM-011',name:'請求書管理一覧',group:'admin',target:'管理者',url:'/admin/invoices',
+desc:'月次締め請求書の一覧表示・新規作成・フィルタリングを行う。',
+items:[
+{no:'1',name:'支払いステータスタブ',type:'filter',typeL:'フィルター（タブ）',input:'—',req:'—',val:'—',note:'全て / 未払い / 支払済み / 延滞。各タブに件数バッジ'},
+{no:'2',name:'請求書一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'請求書番号 / 店舗名 / 対象年月 / 税込合計 / 支払いステータス / 発行日。行クリックで詳細へ'},
+{no:'3',name:'請求書作成ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'作成フォームをアコーディオン展開'},
+{no:'4',name:'会員選択',type:'sel',typeL:'セレクト',input:'—',req:'req',val:'選択必須',note:'承認済み会員のみ表示'},
+{no:'5',name:'対象年（年）',type:'num',typeL:'数値入力',input:'number',req:'req',val:'4桁年',note:''},
+{no:'6',name:'対象月（月）',type:'num',typeL:'数値入力',input:'number',req:'req',val:'1〜12',note:''},
+{no:'7',name:'支払期限',type:'text',typeL:'テキスト入力',input:'date',req:'opt',val:'—',note:''},
+{no:'8',name:'備考',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'—',note:'請求書に印刷される備考欄'},
+{no:'9',name:'作成ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'成功後は作成した請求書の詳細へ遷移'},
+]},
+
+{id:'ADM-012',name:'請求書詳細（印刷）',group:'admin',target:'管理者',url:'/admin/invoices/[id]',
+desc:'月次請求書の詳細確認・支払いステータス変更・印刷/PDF出力を行う。適格請求書（インボイス制度）対応。',
+items:[
+{no:'1',name:'← 請求書一覧',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'印刷 / PDF保存ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'ブラウザ印刷ダイアログを起動。ナビ・ボタンは非印刷'},
+{no:'3',name:'支払いステータス変更ボタン群',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'未払い / 支払済み / 延滞 を切り替え。現在値は非活性表示（印刷エリア外）'},
+{no:'4',name:'発行者情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'会社名・T番号・発行日・支払期限。DBのシステム設定から取得'},
+{no:'5',name:'請求先情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'店舗名・担当者名'},
+{no:'6',name:'請求書番号・対象期間',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'7',name:'注文別明細テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'注文番号 / 商品名 / 箱数 / 単価（税抜）/ 小計（税抜）'},
+{no:'8',name:'金額合計',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'税抜合計 / 消費税（10%）/ 税込合計（強調表示）'},
+{no:'9',name:'備考',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'備考が設定されている場合のみ印刷エリアに表示'},
+{no:'10',name:'支払いステータスバッジ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'印刷エリア内右下。未払い / 支払済み / 延滞'},
+]},
+
+{id:'ADM-013',name:'納品書（印刷）',group:'admin',target:'管理者',url:'/admin/orders/[id]/delivery-note',
+desc:'注文に対する納品書を印刷/PDF出力する。管理者（本部）側からアクセスする。',
+items:[
+{no:'1',name:'← 注文詳細に戻る',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'印刷 / PDF保存ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'ブラウザ印刷ダイアログを起動'},
+{no:'3',name:'発行者情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'会社名・郵便番号・住所・TEL。DBのシステム設定から取得'},
+{no:'4',name:'納品先情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'店舗名・担当者名'},
+{no:'5',name:'注文番号・発行日・注文日',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'3カラムのサマリーボックス'},
+{no:'6',name:'品目テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 箱数 / 本数/箱 / 合計本数。フッターに合計本数'},
+{no:'7',name:'配送先',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'郵便番号・都道府県・住所・受取人・電話'},
+{no:'8',name:'追跡番号',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'設定されている場合のみ表示'},
+{no:'9',name:'備考（メモ）',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'注文メモが設定されている場合のみ表示'},
+]},
+
+{id:'ADM-014',name:'約款管理',group:'admin',target:'管理者（編集者以上）',url:'/admin/terms',
+desc:'利用規約・契約書の内容を編集・下書き保存・公開する。公開後は店舗の新規登録画面で閲覧可能になる。',
+items:[
+{no:'1',name:'公開ステータスバッジ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'公開中（緑）/ 下書き（橙）/ 未作成（橙）'},
+{no:'2',name:'約款本文テキストエリア',type:'area',typeL:'テキストエリア',input:'text',req:'req',val:'1文字以上（公開時）',note:'28行・等幅フォント。自由記述形式'},
+{no:'3',name:'下書き保存ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'公開せずにDBに保存'},
+{no:'4',name:'公開するボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'保存＋公開。確認ダイアログあり。本文が空の場合は非活性'},
+{no:'5',name:'最終更新日時',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'保存後に表示'},
+{no:'6',name:'公開日時',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'公開済みの場合のみ表示'},
+{no:'7',name:'成功/エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'操作結果をインライン表示'},
+]},
+
+{id:'ADM-015',name:'管理者設定',group:'admin',target:'スーパー管理者のみ',url:'/admin/administrators',
+desc:'管理者アカウントの一覧・新規追加・権限変更・停止/再開を管理する。スーパー管理者のみアクセス可能。',
+items:[
+{no:'1',name:'管理者一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'名前 / メール / 権限（スーパー管理者/編集者/閲覧者）/ ステータス（有効/停止）'},
+{no:'2',name:'権限変更セレクト',type:'sel',typeL:'セレクト',input:'—',req:'opt',val:'—',note:'superadmin / editor / viewer'},
+{no:'3',name:'権限変更ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:''},
+{no:'4',name:'停止/再開ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'アカウントを無効化/再有効化'},
+{no:'5',name:'新規追加フォーム',type:'form',typeL:'フォーム',input:'—',req:'—',val:'—',note:'名前 / メール / パスワード（8文字以上）/ 権限'},
+{no:'6',name:'追加ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:''},
+]},
+
+{id:'ADM-016',name:'システム設定',group:'admin',target:'スーパー管理者のみ',url:'/admin/settings',
+desc:'請求書・納品書に印字する会社情報や低在庫アラート閾値をDBで管理・編集する。スーパー管理者のみアクセス可能。',
+items:[
+{no:'1',name:'会社名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'100文字以内',note:'請求書・納品書のヘッダーに印字'},
+{no:'2',name:'郵便番号',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'10文字以内',note:'例: 150-0001'},
+{no:'3',name:'住所',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'200文字以内',note:''},
+{no:'4',name:'電話番号',type:'text',typeL:'テキスト入力',input:'tel',req:'opt',val:'20文字以内',note:''},
+{no:'5',name:'会社メールアドレス',type:'text',typeL:'テキスト入力',input:'email',req:'opt',val:'100文字以内・メール形式',note:''},
+{no:'6',name:'サポート連絡先メール',type:'text',typeL:'テキスト入力',input:'email',req:'opt',val:'100文字以内・メール形式',note:'店舗のパスワード変更案内画面に表示'},
+{no:'7',name:'適格請求書登録番号（T番号）',type:'text',typeL:'テキスト入力',input:'text',req:'opt',val:'20文字以内',note:'例: T1234567890123。請求書に印字（インボイス制度対応）'},
+{no:'8',name:'低在庫アラート閾値（箱数）',type:'num',typeL:'数値入力',input:'number',req:'opt',val:'0〜9999',note:'この箱数以下になったとき本部へメール通知を送信'},
+{no:'9',name:'設定を保存するボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'成功/エラーメッセージをインライン表示'},
+{no:'10',name:'最終更新日時',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'保存後に表示'},
+]},
+
+{id:'MBR-001',name:'ログイン（店舗）',group:'member',target:'店舗スタッフ（承認済み会員）',url:'/login',
+desc:'店舗ユーザーがシステムにログインする。承認済みアカウントのみログイン可能。審査中・停止中はエラーメッセージを表示。',
+items:[
+{no:'1',name:'Camiロゴ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'ブランドロゴ表示'},
+{no:'2',name:'タイトル',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'「店舗ポータル」等の固定テキスト'},
+{no:'3',name:'メールアドレス',type:'text',typeL:'テキスト入力',input:'email',req:'req',val:'メール形式',note:''},
+{no:'4',name:'パスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'1文字以上',note:''},
+{no:'5',name:'ログインボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:''},
+{no:'6',name:'新規登録申請リンク',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:'/register へ遷移'},
+{no:'7',name:'エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'認証失敗・審査中・停止中の場合に各種メッセージを表示'},
+]},
+
+{id:'MBR-002',name:'新規登録申請',group:'member',target:'未登録の店舗（申請者）',url:'/register',
+desc:'店舗が自己申請でアカウントを作成する。申請後は審査中ステータスとなり、本部承認後にログイン可能になる。',
+items:[
+{no:'1',name:'店舗名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'2',name:'担当者名',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'3',name:'メールアドレス',type:'text',typeL:'テキスト入力',input:'email',req:'req',val:'メール形式・重複不可',note:''},
+{no:'4',name:'パスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'8文字以上',note:''},
+{no:'5',name:'電話番号',type:'text',typeL:'テキスト入力',input:'tel',req:'req',val:'1文字以上',note:''},
+{no:'6',name:'住所',type:'text',typeL:'テキスト入力',input:'text',req:'req',val:'1文字以上',note:''},
+{no:'7',name:'事業概要',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'—',note:'席数・業態など'},
+{no:'8',name:'約款同意チェック',type:'chk',typeL:'チェックボックス',input:'—',req:'req',val:'チェック必須',note:'「利用規約に同意する」。約款PDFリンクあり'},
+{no:'9',name:'申請ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'同意チェックOFFは非活性。成功後に完了メッセージを表示'},
+{no:'10',name:'申請完了メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'「申請を受け付けました。本部の審査をお待ちください」'},
+]},
+
+{id:'MBR-003',name:'商品一覧・注文',group:'member',target:'承認済み会員',url:'/products',
+desc:'商品カタログを閲覧し、カートに追加して注文する。自社ランクに応じた卸値・掛け率が表示される。',
+items:[
+{no:'1',name:'商品カード一覧',type:'grid',typeL:'グリッド表示',input:'—',req:'—',val:'—',note:'商品画像 / 商品名 / 定価 / 卸値（自社ランク掛け率）/ 在庫箱数'},
+{no:'2',name:'注文箱数入力',type:'num',typeL:'数値入力',input:'number',req:'req',val:'1以上・在庫以下',note:'各商品カード内に入力欄'},
+{no:'3',name:'カートに追加ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'在庫0の場合は非活性'},
+{no:'4',name:'カートサマリー',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'選択した商品・箱数・税抜小計・消費税・税込合計。カートが空の場合は非表示'},
+{no:'5',name:'配送先選択',type:'sel',typeL:'セレクト',input:'—',req:'req',val:'選択必須',note:'登録済みの配送先から選択'},
+{no:'6',name:'注文確定ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'カートが空または配送先未選択の場合は非活性。確認ダイアログあり'},
+{no:'7',name:'注文完了メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'注文確定後に表示。注文番号を表示'},
+]},
+
+{id:'MBR-004',name:'注文履歴',group:'member',target:'承認済み会員',url:'/orders',
+desc:'自店舗の注文履歴をステータス別タブで確認する。',
+items:[
+{no:'1',name:'ステータスタブ',type:'filter',typeL:'フィルター（タブ）',input:'—',req:'—',val:'—',note:'全て / 確認待ち / 確認済み / 発送済み / 配達完了 / キャンセル'},
+{no:'2',name:'注文一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'注文番号 / 商品名サマリー / 税込金額 / ステータス / 注文日。行クリックで注文詳細へ'},
+{no:'3',name:'空状態メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'「注文がありません」'},
+]},
+
+{id:'MBR-005',name:'注文詳細（店舗）',group:'member',target:'承認済み会員',url:'/orders/[id]',
+desc:'自店舗の注文詳細を確認する。発送通知バナー表示・請求書表示・キャンセル申請が可能。',
+items:[
+{no:'1',name:'← 注文履歴に戻る',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'注文番号・ステータスバッジ',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'3',name:'注文日時',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'4',name:'発送通知バナー',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'発送済み以降のみ表示。追跡番号が設定されている場合は番号も表示'},
+{no:'5',name:'注文品目テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 箱数 / 単価（税抜）/ 小計（税抜）/ 掛け率'},
+{no:'6',name:'金額サマリー',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'税抜小計 / 消費税 / 税込合計'},
+{no:'7',name:'配送先',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'8',name:'本部メモ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'本部でメモが設定されている場合のみ表示'},
+{no:'9',name:'請求書を表示ボタン',type:'btn',typeL:'ボタン（リンク）',input:'—',req:'—',val:'—',note:'確認済み以降で表示。別タブで請求書印刷画面へ遷移'},
+{no:'10',name:'注文キャンセルボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'確認待ちステータスのみ表示。確認ダイアログあり'},
+{no:'11',name:'キャンセル理由',type:'area',typeL:'テキストエリア',input:'text',req:'opt',val:'500文字以内',note:'キャンセル選択時に入力欄を表示'},
+]},
+
+{id:'MBR-006',name:'請求書（店舗印刷）',group:'member',target:'承認済み会員',url:'/orders/[id]/invoice',
+desc:'注文に対する請求書を閲覧・印刷/PDF保存する。適格請求書（T番号）対応。',
+items:[
+{no:'1',name:'← 注文詳細に戻る',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'印刷 / PDF保存ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'ブラウザ印刷ダイアログを起動'},
+{no:'3',name:'発行者情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'会社名 / 郵便番号 / 住所 / TEL / メール。DBのシステム設定から取得'},
+{no:'4',name:'T番号（登録番号）',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'「登録番号: T1234567890123」。DBのシステム設定から取得'},
+{no:'5',name:'請求先情報',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'店舗名 御中 / 担当者名 様'},
+{no:'6',name:'請求書番号・発行日',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'注文番号を請求書番号として使用'},
+{no:'7',name:'品目テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'商品名 / 掛け率 / 税率 / 箱数 / 単価（税抜）/ 小計（税抜）'},
+{no:'8',name:'金額合計',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'税抜小計 / 消費税（%）/ 税込合計（強調表示）'},
+{no:'9',name:'軽減税率注記',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'「※印は軽減税率対象外（標準税率 10%）です。」'},
+{no:'10',name:'配送先',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:''},
+{no:'11',name:'お問い合わせ先',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'サポートメール。DBのシステム設定から取得'},
+]},
+
+{id:'MBR-007',name:'アカウント設定',group:'member',target:'承認済み会員',url:'/account',
+desc:'店舗基本情報の確認・配送先の追加/削除/デフォルト設定・パスワード変更へのリンクを提供する。',
+items:[
+{no:'1',name:'店舗名',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'2',name:'担当者名',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'3',name:'メールアドレス',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:''},
+{no:'4',name:'現在のランク',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'ランク名・掛け率（%）'},
+{no:'5',name:'配送先一覧テーブル',type:'tbl',typeL:'テーブル',input:'—',req:'—',val:'—',note:'ラベル / 受取人 / 住所 / 電話 / デフォルトフラグ / 削除ボタン'},
+{no:'6',name:'配送先追加フォーム',type:'form',typeL:'フォーム',input:'—',req:'opt',val:'—',note:'ラベル名 / 受取人 / 郵便番号 / 都道府県 / 住所1 / 住所2 / 電話'},
+{no:'7',name:'デフォルト設定ボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'選択した配送先をデフォルトに設定'},
+{no:'8',name:'削除ボタン（配送先）',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:'論理削除（deleted_at）。確認ダイアログあり'},
+{no:'9',name:'パスワード変更リンク',type:'link',typeL:'リンク',input:'—',req:'—',val:'—',note:'/account/password へ遷移'},
+]},
+
+{id:'MBR-008',name:'パスワード変更',group:'member',target:'承認済み会員',url:'/account/password',
+desc:'ログイン中の店舗ユーザーが自身のパスワードを変更する。現在のパスワードによる本人確認あり。',
+items:[
+{no:'1',name:'現在のパスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'現在のパスワードと一致',note:'本人確認用'},
+{no:'2',name:'新しいパスワード',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'8文字以上',note:''},
+{no:'3',name:'新しいパスワード（確認）',type:'pw',typeL:'パスワード入力',input:'password',req:'req',val:'新しいパスワードと一致',note:''},
+{no:'4',name:'変更するボタン',type:'btn',typeL:'ボタン',input:'—',req:'—',val:'—',note:''},
+{no:'5',name:'成功メッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'「パスワードを変更しました」'},
+{no:'6',name:'エラーメッセージ',type:'cond',typeL:'表示（条件）',input:'—',req:'—',val:'—',note:'現在PW不一致・新PW確認不一致・8文字未満 等'},
+{no:'7',name:'サポート連絡先',type:'disp',typeL:'表示',input:'—',req:'—',val:'—',note:'パスワード忘れ時の問い合わせ案内。DBのシステム設定のサポートメールを表示'},
+]},
+];
+
+const typeBadge = {
+  text:'<span class="badge b-text">テキスト入力</span>',
+  pw:'<span class="badge b-pw">パスワード入力</span>',
+  num:'<span class="badge b-num">数値入力</span>',
+  area:'<span class="badge b-area">テキストエリア</span>',
+  sel:'<span class="badge b-sel">セレクト</span>',
+  chk:'<span class="badge b-chk">チェックボックス</span>',
+  btn:'<span class="badge b-btn">ボタン</span>',
+  link:'<span class="badge b-link">リンク</span>',
+  disp:'<span class="badge b-disp">表示</span>',
+  cond:'<span class="badge b-cond">表示（条件）</span>',
+  tbl:'<span class="badge b-tbl">テーブル</span>',
+  graph:'<span class="badge b-graph">グラフ</span>',
+  file:'<span class="badge b-file">ファイル選択</span>',
+  filter:'<span class="badge b-filter">フィルター（タブ）</span>',
+  form:'<span class="badge b-form">フォーム</span>',
+  grid:'<span class="badge b-tbl">グリッド表示</span>',
+};
+
+let currentIdx = 0;
+
+function render(idx) {
+  currentIdx = idx;
+  const s = screens[idx];
+
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.querySelectorAll('.sid-item').forEach((t,i) => t.classList.toggle('active', i===idx));
+
+  const groupLabel = s.group === 'admin' ? '管理者（本部）' : '店舗（会員）';
+  const groupColor = s.group === 'admin' ? '#1b6b45' : '#1a73e8';
+
+  const rows = s.items.map(r => {
+    const reqBadge = r.req === 'req' ? '<span class="req">必須</span>' : r.req === 'opt' ? '<span class="opt">任意</span>' : '—';
+    return `<tr>
+      <td class="no">${r.no}</td>
+      <td style="font-weight:500">${r.name}</td>
+      <td>${typeBadge[r.type] || r.typeL}</td>
+      <td style="color:#5f6368;font-family:monospace;font-size:11px">${r.input}</td>
+      <td style="text-align:center">${reqBadge}</td>
+      <td style="color:#5f6368;font-size:11px">${r.val}</td>
+      <td style="color:#5f6368">${r.note}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('main').innerHTML = `
+<div class="sheet">
+  <div class="sheet-header">
+    <div class="info-grid">
+      <div class="info-item"><label>画面ID</label><span>${s.id}</span></div>
+      <div class="info-item"><label>画面名</label><span>${s.name}</span></div>
+      <div class="info-item"><label>対象ユーザー</label><span>${s.target}</span></div>
+      <div class="info-item"><label>区分</label><span style="color:${groupColor};font-weight:600">${groupLabel}</span></div>
+      <div class="info-item"><label>URL / パス</label><span class="url">${s.url}</span></div>
+      <div class="info-item full"><label>画面概要</label><span style="font-weight:400;line-height:1.6">${s.desc}</span></div>
+    </div>
+  </div>
+
+  <div class="capture-zone">
+    <span>&#128247;</span>
+    <span>画面キャプチャ添付エリア（${s.id} — ${s.name}）</span>
+  </div>
+
+  <div class="section-title">&#9776;&nbsp; 画面項目定義</div>
+
+  <table>
+    <colgroup>
+      <col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>項目名</th>
+        <th>種別</th>
+        <th>入力形式</th>
+        <th>必須/任意</th>
+        <th>バリデーション</th>
+        <th>備考</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</div>`;
+}
+
+const sidebar = document.getElementById('sidebar');
+const tabs = document.getElementById('tabs');
+let lastGroup = '';
+
+screens.forEach((s, i) => {
+  if (s.group !== lastGroup) {
+    lastGroup = s.group;
+    const g = document.createElement('div');
+    g.className = 'sidebar-group';
+    g.textContent = s.group === 'admin' ? '▍ 管理者（本部）' : '▍ 店舗（会員）';
+    sidebar.appendChild(g);
+  }
+  const d = document.createElement('div');
+  d.className = 'sid-item';
+  d.textContent = s.id + ' ' + s.name;
+  d.title = s.id + ': ' + s.name;
+  d.onclick = () => render(i);
+  sidebar.appendChild(d);
+
+  const t = document.createElement('div');
+  t.className = 'tab ' + (s.group === 'admin' ? 'admin-tab' : 'member-tab');
+  t.textContent = s.id;
+  t.title = s.name;
+  t.onclick = () => render(i);
+  tabs.appendChild(t);
+});
+
+render(0);
+</script>
+</body>
+</html>

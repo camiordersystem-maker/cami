@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, or, isNull, gte, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/utils";
@@ -34,6 +34,31 @@ export default async function MemberDashboardPage() {
     .select({ value: count() })
     .from(schema.orders)
     .where(eq(schema.orders.memberId, memberId));
+
+  const now = new Date();
+  const latestAnnouncements = await db
+    .select({
+      id: schema.announcements.id,
+      title: schema.announcements.title,
+      type: schema.announcements.type,
+      createdAt: schema.announcements.createdAt,
+    })
+    .from(schema.announcements)
+    .where(
+      and(
+        or(
+          eq(schema.announcements.type, "all"),
+          eq(schema.announcements.targetMemberId, memberId)
+        ),
+        or(
+          isNull(schema.announcements.expiresAt),
+          gte(schema.announcements.expiresAt, now)
+        )
+      )
+    )
+    .orderBy(desc(schema.announcements.createdAt))
+    .limit(3)
+    .catch(() => []);
 
   const pendingOrders = recentOrders.filter((o: (typeof recentOrders)[0]) => o.status === "pending").length;
 
@@ -125,6 +150,29 @@ export default async function MemberDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Latest Announcements */}
+      {latestAnnouncements.length > 0 && (
+        <div className="mt-6 bg-white rounded-xl border border-slate-200">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="font-semibold text-slate-900">お知らせ</h2>
+            <Link href="/announcements" className="text-sm text-blue-600 hover:underline">すべて見る →</Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {latestAnnouncements.map((a: (typeof latestAnnouncements)[0]) => (
+              <Link key={a.id} href="/announcements" className="flex items-center justify-between px-6 py-3.5 hover:bg-slate-50 transition-colors">
+                <div className="min-w-0">
+                  <div className="font-medium text-sm text-slate-900 truncate">{a.title}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">{formatDate(a.createdAt)}</div>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ml-3 shrink-0 ${a.type === "all" ? "bg-slate-100 text-slate-600" : "bg-blue-100 text-blue-700"}`}>
+                  {a.type === "all" ? "全体" : "個別"}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rank Info */}
       <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-5">

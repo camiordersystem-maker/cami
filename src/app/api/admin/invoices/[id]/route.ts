@@ -84,10 +84,23 @@ export async function PATCH(
     if (body.paymentStatus) updates.paymentStatus = body.paymentStatus;
     if (body.note !== undefined) updates.note = body.note;
 
+    const [invoice] = await db
+      .select({ id: schema.monthlyInvoices.id, memberId: schema.monthlyInvoices.memberId, invoiceNo: schema.monthlyInvoices.invoiceNo, paymentStatus: schema.monthlyInvoices.paymentStatus })
+      .from(schema.monthlyInvoices)
+      .where(eq(schema.monthlyInvoices.id, params.id));
+
     await db
       .update(schema.monthlyInvoices)
       .set(updates as Partial<typeof schema.monthlyInvoices.$inferInsert>)
       .where(eq(schema.monthlyInvoices.id, params.id));
+
+    if (body.paymentStatus && invoice && invoice.paymentStatus !== "paid" && body.paymentStatus === "paid") {
+      await db.insert(schema.notifications).values({
+        memberId: invoice.memberId,
+        type: "invoice_issued",
+        message: `請求書が発行されました（${invoice.invoiceNo}）`,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {

@@ -27,6 +27,9 @@ export const {
   auditLogs,
   terms,
   systemSettings,
+  notifications,
+  announcements,
+  announcementReads,
   memberRanksRelations,
   membersRelations,
   shippingAddressesRelations,
@@ -36,12 +39,15 @@ export const {
   ordersRelations,
   orderItemsRelations,
   monthlyInvoicesRelations,
+  notificationsRelations,
+  announcementsRelations,
+  announcementReadsRelations,
 } = schemaModule;
 
 // ─── Type aliases (DB-agnostic) ───────────────────────────────────────────────
 
 export type MemberStatus = "pending" | "approved" | "rejected" | "suspended";
-export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "cancel_requested";
 export type ActorRole = "admin" | "member";
 
 // ─── Inferred types (PG-based for production accuracy) ────────────────────────
@@ -72,3 +78,8 @@ export type MonthlyInvoice = typeof monthlyInvoices.$inferSelect;
 export type NewMonthlyInvoice = typeof monthlyInvoices.$inferInsert;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;
+export type AnnouncementRead = typeof announcementReads.$inferSelect;

@@ -54,6 +54,7 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   shipped: "発送済み",
   delivered: "配達完了",
   cancelled: "キャンセル",
+  cancel_requested: "キャンセル申込中",
 };
 
 export const ORDER_STATUS_COLOR: Record<string, string> = {
@@ -62,6 +63,7 @@ export const ORDER_STATUS_COLOR: Record<string, string> = {
   shipped: "bg-purple-100 text-purple-800",
   delivered: "bg-green-100 text-green-800",
   cancelled: "bg-gray-100 text-gray-600",
+  cancel_requested: "bg-red-100 text-red-800",
 };
 
 export const MEMBER_STATUS_LABEL: Record<string, string> = {

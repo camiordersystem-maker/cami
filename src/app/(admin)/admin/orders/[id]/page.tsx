@@ -37,6 +37,7 @@ const TRANSITIONS: Record<string, { label: string; next: string; color: string }
   ],
   delivered: [],
   cancelled: [],
+  cancel_requested: [],
 };
 
 export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
@@ -47,6 +48,28 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  async function handleCancelApprove() {
+    if (!confirm("キャンセルを承認しますか？在庫が戻されます。")) return;
+    setUpdating(true);
+    setMessage(null);
+    const res = await fetch(`/api/admin/orders/${params.id}/cancel-approve`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setUpdating(false);
+    if (res.ok) { setMessage({ text: "キャンセルを承認しました", ok: true }); load(); }
+    else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+  }
+
+  async function handleCancelReject() {
+    if (!confirm("キャンセル申込を拒否しますか？注文は元のステータスに戻ります。")) return;
+    setUpdating(true);
+    setMessage(null);
+    const res = await fetch(`/api/admin/orders/${params.id}/cancel-reject`, { method: "POST" });
+    const data = await res.json().catch(() => ({}));
+    setUpdating(false);
+    if (res.ok) { setMessage({ text: "キャンセル申込を拒否しました", ok: true }); load(); }
+    else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+  }
 
   async function load() {
     const res = await fetch(`/api/admin/orders/${params.id}`);
@@ -158,7 +181,34 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
         </div>
       )}
 
-      {order.cancelReason && (
+      {/* Cancel requested action panel */}
+      {order.status === "cancel_requested" && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+          <p className="text-sm font-semibold text-red-800 mb-1">キャンセル申込があります</p>
+          {order.cancelReason && (
+            <p className="text-sm text-red-700 mb-3">申込理由：{order.cancelReason}</p>
+          )}
+          <p className="text-xs text-red-600 mb-4">承認すると在庫が注文数量分返却されます。</p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleCancelApprove}
+              disabled={updating}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              {updating ? "処理中..." : "承認する（キャンセル確定）"}
+            </button>
+            <button
+              onClick={handleCancelReject}
+              disabled={updating}
+              className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium disabled:opacity-50"
+            >
+              拒否する
+            </button>
+          </div>
+        </div>
+      )}
+
+      {order.cancelReason && order.status !== "cancel_requested" && (
         <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 mb-6">
           <span className="font-medium">キャンセル理由：</span>{order.cancelReason}
         </div>

@@ -163,9 +163,23 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex justify-between font-bold">
-                <span className="text-slate-900">合計</span>
-                <span className="text-blue-700 text-lg">{fmt(total)}</span>
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl space-y-1.5">
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>商品合計（税抜）</span>
+                  <span>{fmt(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>消費税（10%）</span>
+                  <span>{fmt(taxAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-slate-500">
+                  <span>送料</span>
+                  <span>別途ご連絡します</span>
+                </div>
+                <div className="flex justify-between font-bold text-slate-900 pt-1.5 border-t border-slate-200">
+                  <span>合計（税込・送料別）</span>
+                  <span className="text-blue-700 text-lg">{fmt(total)}</span>
+                </div>
               </div>
             </div>
 
@@ -197,15 +211,19 @@ export default function ProductsPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-6">
               <div className="text-sm text-slate-700 space-y-3 mb-5">
                 <div className="flex justify-between text-slate-500">
-                  <span>税抜小計</span>
+                  <span>商品合計（税抜）</span>
                   <span>{fmt(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
                   <span>消費税（10%）</span>
                   <span>{fmt(taxAmount)}</span>
                 </div>
+                <div className="flex justify-between text-slate-400 text-xs">
+                  <span>送料</span>
+                  <span>別途ご連絡</span>
+                </div>
                 <div className="flex justify-between font-bold text-slate-900 border-t border-slate-100 pt-3">
-                  <span>税込合計</span>
+                  <span>合計（税込・送料別）</span>
                   <span>{fmt(total)}</span>
                 </div>
               </div>
@@ -366,10 +384,14 @@ export default function ProductsPage() {
                 ))}
             </div>
 
-            <div className="border-t border-slate-100 pt-3 mb-5">
+            <div className="border-t border-slate-100 pt-3 mb-5 space-y-1.5">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>消費税（10%）</span>
+                <span>{fmt(Math.round(cartTotal * 0.10))}</span>
+              </div>
               <div className="flex justify-between font-bold text-slate-900">
-                <span>合計</span>
-                <span className="text-blue-700">{fmt(cartTotal)}</span>
+                <span>商品合計（税込）</span>
+                <span className="text-blue-700">{fmt(cartTotal + Math.round(cartTotal * 0.10))}</span>
               </div>
             </div>
 

@@ -8,6 +8,13 @@
       "when": 1782103793234,
       "tag": "0000_curly_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1782200000000,
+      "tag": "0001_new_features",
+      "breakpoints": true
     }
   ]
 }

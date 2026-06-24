@@ -136,7 +136,7 @@ export const inventory = sqliteTable("inventory", {
 });
 
 // ─── orders ───────────────────────────────────────────────────────────────────
-// status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+// status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'cancel_requested'
 
 export const orders = sqliteTable(
   "orders",
@@ -150,18 +150,20 @@ export const orders = sqliteTable(
       .notNull()
       .references(() => shippingAddresses.id),
     status: text("status", {
-      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled", "cancel_requested"],
     })
       .notNull()
       .default("pending"),
     subtotal: integer("subtotal").notNull(),
     taxRate: real("tax_rate").notNull().default(0.10),
     taxAmount: integer("tax_amount").notNull().default(0),
+    shippingFee: integer("shipping_fee").notNull().default(0),
     total: integer("total").notNull(),
     paymentStatus: text("payment_status").notNull().default("unpaid"),
     paymentDueDate: integer("payment_due_date", { mode: "timestamp" }),
     trackingNumber: text("tracking_number"),
     cancelReason: text("cancel_reason"),
+    cancelBeforeStatus: text("cancel_before_status"),
     memo: text("memo"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
@@ -280,6 +282,38 @@ export const terms = sqliteTable("terms", {
   updatedBy: text("updated_by").notNull().default("system"),
 });
 
+// ─── notifications ────────────────────────────────────────────────────────────
+
+export const notifications = sqliteTable("notifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  memberId: text("member_id").notNull().references(() => members.id),
+  type: text("type", { enum: ["invoice_issued", "order_confirmed", "order_shipped"] }).notNull(),
+  message: text("message").notNull(),
+  orderId: text("order_id").references(() => orders.id),
+  isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+// ─── announcements ────────────────────────────────────────────────────────────
+
+export const announcements = sqliteTable("announcements", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  type: text("type", { enum: ["all", "individual"] }).notNull().default("all"),
+  targetMemberId: text("target_member_id").references(() => members.id),
+  createdBy: text("created_by").notNull().references(() => admins.id),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+});
+
+export const announcementReads = sqliteTable("announcement_reads", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  announcementId: text("announcement_id").notNull().references(() => announcements.id),
+  memberId: text("member_id").notNull().references(() => members.id),
+  readAt: integer("read_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const memberRanksRelations = relations(memberRanks, ({ many }) => ({
@@ -358,6 +392,22 @@ export const monthlyInvoicesRelations = relations(monthlyInvoices, ({ one }) => 
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  member: one(members, { fields: [notifications.memberId], references: [members.id] }),
+  order: one(orders, { fields: [notifications.orderId], references: [orders.id] }),
+}));
+
+export const announcementsRelations = relations(announcements, ({ one, many }) => ({
+  targetMember: one(members, { fields: [announcements.targetMemberId], references: [members.id] }),
+  createdByAdmin: one(admins, { fields: [announcements.createdBy], references: [admins.id] }),
+  reads: many(announcementReads),
+}));
+
+export const announcementReadsRelations = relations(announcementReads, ({ one }) => ({
+  announcement: one(announcements, { fields: [announcementReads.announcementId], references: [announcements.id] }),
+  member: one(members, { fields: [announcementReads.memberId], references: [members.id] }),
+}));
+
 // ─── Inferred Types ───────────────────────────────────────────────────────────
 
 export type MemberRank = typeof memberRanks.$inferSelect;
@@ -383,8 +433,14 @@ export type NewTerms = typeof terms.$inferInsert;
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type NewSystemSettings = typeof systemSettings.$inferInsert;
 
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
+export type Announcement = typeof announcements.$inferSelect;
+export type NewAnnouncement = typeof announcements.$inferInsert;
+export type AnnouncementRead = typeof announcementReads.$inferSelect;
+
 // ─── Status type aliases ──────────────────────────────────────────────────────
 
 export type MemberStatus = "pending" | "approved" | "rejected" | "suspended";
-export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled" | "cancel_requested";
 export type ActorRole = "admin" | "member";

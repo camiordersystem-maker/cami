@@ -1,10 +1,11 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, count, sum, desc, gte, and } from "drizzle-orm";
+import { eq, count, sum, desc, gte, and, lte } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_COLOR, MEMBER_STATUS_LABEL, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
+import { INVENTORY_WARNING_THRESHOLD } from "@/lib/constants";
 
 export const metadata = { title: "管理ダッシュボード" };
 
@@ -89,6 +90,17 @@ export default async function AdminDashboardPage() {
     .orderBy(desc(schema.members.createdAt))
     .limit(5);
 
+  const inventoryWarnings = await db
+    .select({
+      productId: schema.inventory.productId,
+      availableBoxes: schema.inventory.availableBoxes,
+      productName: schema.products.name,
+    })
+    .from(schema.inventory)
+    .leftJoin(schema.products, eq(schema.inventory.productId, schema.products.id))
+    .where(lte(schema.inventory.availableBoxes, INVENTORY_WARNING_THRESHOLD))
+    .catch(() => []);
+
   const maxMonthly = Math.max(...Object.values(monthlyMap), 1);
 
   return (
@@ -134,6 +146,32 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/invoices" className="text-sm text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
             請求書管理 →
           </Link>
+        </div>
+      )}
+
+      {/* Inventory Warnings */}
+      {inventoryWarnings.length > 0 ? (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold text-red-800 text-sm">⚠️ 在庫警告（{inventoryWarnings.length}件）</div>
+            <Link href="/admin/inventory" className="text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+              在庫管理 →
+            </Link>
+          </div>
+          <div className="divide-y divide-red-100">
+            {inventoryWarnings.map((item: (typeof inventoryWarnings)[0]) => (
+              <div key={item.productId} className="py-2 flex items-center justify-between text-sm">
+                <span className="text-red-800 font-medium">{item.productName ?? item.productId}</span>
+                <span className={`font-bold ${item.availableBoxes === 0 ? "text-red-600" : "text-amber-600"}`}>
+                  残 {item.availableBoxes} 箱
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-3">
+          <span className="text-sm text-green-800">✅ 在庫に問題はありません（全商品 {INVENTORY_WARNING_THRESHOLD}箱超）</span>
         </div>
       )}
 

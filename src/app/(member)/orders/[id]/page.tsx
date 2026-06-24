@@ -68,24 +68,24 @@ export default function MemberOrderDetailPage() {
 
   useEffect(() => { load(); }, [id]);
 
-  async function handleCancel() {
-    if (!confirm("この注文をキャンセルしますか？")) return;
+  async function handleCancelRequest() {
+    if (!confirm("キャンセルを申し込みますか？本部の承認後にキャンセルが確定します。")) return;
     setCancelling(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/orders/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/orders/${id}/cancel-request`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cancelReason: cancelReason || undefined }),
       });
       const data = await res.json().catch(() => ({}));
       setCancelling(false);
       if (res.ok) {
-        setMessage({ text: "注文をキャンセルしました", ok: true });
+        setMessage({ text: "キャンセルを申し込みました。本部の審査をお待ちください。", ok: true });
         setShowCancelForm(false);
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "キャンセルに失敗しました", ok: false });
+        setMessage({ text: (data as { error?: string }).error ?? "申込に失敗しました", ok: false });
       }
     } catch {
       setCancelling(false);
@@ -103,7 +103,8 @@ export default function MemberOrderDetailPage() {
 
   const statusIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
   const isCancelled = order.status === "cancelled";
-  const canCancel = order.status === "pending";
+  const isCancelRequested = order.status === "cancel_requested";
+  const canRequestCancel = order.status === "pending" || order.status === "confirmed";
   const taxRate = typeof order.taxRate === "string" ? parseFloat(order.taxRate) : (order.taxRate ?? 0);
   const taxRatePercent = Math.round(taxRate * 100);
 
@@ -147,13 +148,18 @@ export default function MemberOrderDetailPage() {
               請求書を見る
             </Link>
           )}
-          {canCancel && (
+          {canRequestCancel && !isCancelRequested && (
             <button
               onClick={() => setShowCancelForm(!showCancelForm)}
               className="text-sm text-red-600 hover:underline"
             >
-              注文をキャンセル
+              キャンセルを申し込む
             </button>
+          )}
+          {isCancelRequested && (
+            <span className="text-sm font-medium px-3 py-1.5 rounded-full bg-red-100 text-red-800">
+              キャンセル申込済み（審査中）
+            </span>
           )}
         </div>
       </div>
@@ -161,9 +167,9 @@ export default function MemberOrderDetailPage() {
       {/* Cancel form */}
       {showCancelForm && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-5">
-          <p className="text-sm text-red-800 font-semibold mb-3">注文キャンセルの確認</p>
+          <p className="text-sm text-red-800 font-semibold mb-3">キャンセル申込の確認</p>
           <p className="text-sm text-red-700 mb-3">
-            未確認の注文のみキャンセルできます。確認済み以降のキャンセルは本部へお問い合わせください。
+            本部の承認後にキャンセルが確定します。承認まで注文は「キャンセル申込中」の状態になります。
           </p>
           <textarea
             value={cancelReason}
@@ -174,11 +180,11 @@ export default function MemberOrderDetailPage() {
           />
           <div className="flex gap-3">
             <button
-              onClick={handleCancel}
+              onClick={handleCancelRequest}
               disabled={cancelling}
               className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             >
-              {cancelling ? "処理中..." : "キャンセルする"}
+              {cancelling ? "処理中..." : "キャンセルを申し込む"}
             </button>
             <button
               onClick={() => setShowCancelForm(false)}
@@ -187,6 +193,16 @@ export default function MemberOrderDetailPage() {
               戻る
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Cancel requested notice */}
+      {isCancelRequested && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">
+          キャンセル申込中です。本部の審査結果をお待ちください。承認されると在庫が戻されます。
+          {order.cancelReason && (
+            <div className="mt-1 text-red-700">申込理由：{order.cancelReason}</div>
+          )}
         </div>
       )}
 

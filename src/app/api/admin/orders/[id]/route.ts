@@ -12,6 +12,7 @@ const ORDER_TRANSITIONS: Record<string, string[]> = {
   shipped: ["delivered"],
   delivered: [],
   cancelled: [],
+  cancel_requested: [],
 };
 
 const updateSchema = z.object({
@@ -36,9 +37,10 @@ export async function GET(
         id: schema.orders.id, orderNo: schema.orders.orderNo, memberId: schema.orders.memberId,
         shippingAddressId: schema.orders.shippingAddressId, status: schema.orders.status,
         subtotal: schema.orders.subtotal, taxRate: schema.orders.taxRate, taxAmount: schema.orders.taxAmount,
-        total: schema.orders.total, paymentStatus: schema.orders.paymentStatus,
-        paymentDueDate: schema.orders.paymentDueDate, trackingNumber: schema.orders.trackingNumber,
-        cancelReason: schema.orders.cancelReason, memo: schema.orders.memo,
+        shippingFee: schema.orders.shippingFee, total: schema.orders.total,
+        paymentStatus: schema.orders.paymentStatus, paymentDueDate: schema.orders.paymentDueDate,
+        trackingNumber: schema.orders.trackingNumber, cancelReason: schema.orders.cancelReason,
+        cancelBeforeStatus: schema.orders.cancelBeforeStatus, memo: schema.orders.memo,
         createdAt: schema.orders.createdAt, updatedAt: schema.orders.updatedAt,
       })
       .from(schema.orders)
@@ -92,7 +94,10 @@ export async function PATCH(
   }
 
   const { id } = params;
-  const [order] = await db.select().from(schema.orders).where(eq(schema.orders.id, id));
+  const [order] = await db
+    .select({ id: schema.orders.id, status: schema.orders.status, paymentStatus: schema.orders.paymentStatus, memberId: schema.orders.memberId, orderNo: schema.orders.orderNo })
+    .from(schema.orders)
+    .where(eq(schema.orders.id, id));
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
@@ -109,6 +114,24 @@ export async function PATCH(
         );
       }
       updates.status = parsed.data.status;
+
+      const notifyType = parsed.data.status === "confirmed"
+        ? "order_confirmed"
+        : parsed.data.status === "shipped"
+        ? "order_shipped"
+        : null;
+
+      if (notifyType) {
+        const message = parsed.data.status === "confirmed"
+          ? `注文が確認されました（${order.orderNo}）`
+          : `ご注文の商品を発送しました（${order.orderNo}）`;
+        await db.insert(schema.notifications).values({
+          memberId: order.memberId,
+          type: notifyType,
+          message,
+          orderId: id,
+        }).catch(() => {});
+      }
     }
 
     if (parsed.data.trackingNumber !== undefined) {

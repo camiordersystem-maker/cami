@@ -14,6 +14,7 @@ const baseNavItems = [
   { href: "/admin/inventory", label: "在庫管理" },
   { href: "/admin/ranks", label: "ランク管理" },
   { href: "/admin/terms", label: "約款管理" },
+  { href: "/admin/announcements", label: "お知らせ管理" },
 ];
 
 const superAdminNavItems = [
