@@ -4,9 +4,10 @@ import { migrate } from "drizzle-orm/neon-http/migrator";
 import { sql as drizzleSql } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
+import { assertPostgresDatabaseUrl } from "../env";
 
 const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
+assertPostgresDatabaseUrl(url);
 
 const sqlRaw = neon(url);
 const db = drizzle(sqlRaw);

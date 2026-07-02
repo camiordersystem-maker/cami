@@ -1,9 +1,13 @@
 import { neon } from "@neondatabase/serverless";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { assertPostgresDatabaseUrl } from "../env";
 
 const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
+assertPostgresDatabaseUrl(url);
+if (process.env.VERCEL_ENV === "production" && process.env.ALLOW_PRODUCTION_SEED !== "true") {
+  throw new Error("Refusing to seed production PostgreSQL without ALLOW_PRODUCTION_SEED=true.");
+}
 
 const sql = neon(url);
 

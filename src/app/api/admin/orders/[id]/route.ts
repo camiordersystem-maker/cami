@@ -1,19 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
-
-const ORDER_TRANSITIONS: Record<string, string[]> = {
-  pending: ["confirmed", "cancelled"],
-  confirmed: ["shipped", "cancelled"],
-  shipped: ["delivered"],
-  delivered: [],
-  cancelled: [],
-  cancel_requested: [],
-};
+import { canTransitionOrder } from "@/lib/order-status";
+import { conflict, internalError, notFound, ok, unauthorized, validationError } from "@/lib/api-response";
 
 const updateSchema = z.object({
   status: z.enum(["pending", "confirmed", "shipped", "delivered", "cancelled"]).optional(),
@@ -28,7 +21,7 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return unauthorized();
   }
 
   try {
@@ -46,7 +39,7 @@ export async function GET(
       .from(schema.orders)
       .where(eq(schema.orders.id, params.id));
 
-    if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!order) return notFound();
 
     const items = await db
       .select({
@@ -73,10 +66,10 @@ export async function GET(
       .from(schema.shippingAddresses)
       .where(eq(schema.shippingAddresses.id, order.shippingAddressId));
 
-    return NextResponse.json({ ...order, member: member ?? null, address: address ?? null, items });
+    return Response.json({ ...order, member: member ?? null, address: address ?? null, items });
   } catch (e) {
     console.error("admin order GET error:", e);
-    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
+    return internalError("取得に失敗しました");
   }
 }
 
@@ -90,7 +83,7 @@ export async function PATCH(
 
   const parsed = updateSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+    return validationError();
   }
 
   const { id } = params;
@@ -98,7 +91,7 @@ export async function PATCH(
     .select({ id: schema.orders.id, status: schema.orders.status, paymentStatus: schema.orders.paymentStatus, memberId: schema.orders.memberId, orderNo: schema.orders.orderNo })
     .from(schema.orders)
     .where(eq(schema.orders.id, id));
-  if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!order) return notFound();
 
   try {
     const updates: Partial<typeof schema.orders.$inferInsert> = {
@@ -106,12 +99,8 @@ export async function PATCH(
     };
 
     if (parsed.data.status) {
-      const allowed = ORDER_TRANSITIONS[order.status] ?? [];
-      if (!allowed.includes(parsed.data.status)) {
-        return NextResponse.json(
-          { error: `${order.status} → ${parsed.data.status} への変更はできません` },
-          { status: 422 }
-        );
+      if (!canTransitionOrder(order.status, parsed.data.status)) {
+        return conflict(`${order.status} → ${parsed.data.status} への変更はできません`);
       }
       updates.status = parsed.data.status;
 
@@ -158,9 +147,9 @@ export async function PATCH(
       afterValue: JSON.stringify(parsed.data),
     });
 
-    return NextResponse.json({ ok: true });
+    return ok({ id });
   } catch (e) {
     console.error("admin order PATCH error:", e);
-    return NextResponse.json({ error: "更新に失敗しました" }, { status: 500 });
+    return internalError("更新に失敗しました");
   }
 }

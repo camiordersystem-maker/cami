@@ -9,14 +9,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit --incremental false",
+    "test": "tsx src/lib/__tests__/business-rules.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx src/lib/db/migrate.ts",
     "db:migrate:pg": "npx tsx src/lib/db/migrate.pg.ts",
+    "db:verify": "npx tsx scripts/verify-schema.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "npx tsx src/lib/db/seed.ts",
     "seed:pg": "npx tsx src/lib/db/seed.pg.ts",
-    "vercel-build": "npx tsx src/lib/db/migrate.pg.ts && npx tsx src/lib/db/seed.pg.ts && next build"
+    "preflight": "npx tsx scripts/preflight.ts",
+    "smoke:production": "npx tsx scripts/smoke-production.ts",
+    "release:production": "npx tsx scripts/release-production.ts",
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

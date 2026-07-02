@@ -1,13 +1,15 @@
 import * as schema from "./schema";
+import { assertRuntimeEnv, isPostgresUrl } from "@/lib/env";
 
 // ─── SQLite (local) vs Neon PostgreSQL (production) ───────────────────────────
 // DATABASE_URL が postgresql:// で始まる場合は Neon を使用
 // 未設定 or sqlite:// の場合は better-sqlite3 を使用
 
 function createDb() {
+  assertRuntimeEnv();
   const url = process.env.DATABASE_URL ?? "";
 
-  if (url.startsWith("postgresql://") || url.startsWith("postgres://")) {
+  if (isPostgresUrl(url)) {
     // ── Production: Neon PostgreSQL ──────────────────────────────────────────
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { neon } = require("@neondatabase/serverless");
@@ -20,6 +22,9 @@ function createDb() {
   }
 
   // ── Local: SQLite (better-sqlite3) ────────────────────────────────────────
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SQLite is not allowed in production.");
+  }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const Database = require("better-sqlite3");
   // eslint-disable-next-line @typescript-eslint/no-require-imports
