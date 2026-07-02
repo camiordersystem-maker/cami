@@ -2,11 +2,12 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { z } from "zod";
 import { generateOrderNo, TAX_RATE } from "@/lib/utils";
 import { sendOrderConfirmation } from "@/lib/email";
 import { conflict, forbidden, internalError, notFound, ok, unauthorized, validationError } from "@/lib/api-response";
+import { isPostgresRuntime } from "@/lib/env";
 
 const orderItemSchema = z.object({
   productId: z.string(),
@@ -57,22 +58,6 @@ export async function POST(req: NextRequest) {
 
   const memberId = session.user.id;
   const { shippingAddressId, items, memo } = parsed.data;
-  const decrementedItems: { productId: string; boxes: number }[] = [];
-  let createdOrderId: string | null = null;
-
-  const restoreInventory = async () => {
-    for (const item of decrementedItems) {
-      await db
-        .update(schema.inventory)
-        .set({
-          availableBoxes: sql`${schema.inventory.availableBoxes} + ${item.boxes}`,
-          updatedAt: new Date(),
-          updatedBy: memberId,
-        })
-        .where(eq(schema.inventory.productId, item.productId));
-    }
-    decrementedItems.length = 0;
-  };
 
   try {
     const [member] = await db
@@ -90,6 +75,25 @@ export async function POST(req: NextRequest) {
     if (!rank) return internalError("ランク情報が見つかりません");
 
     const rate = typeof rank.rate === "string" ? parseFloat(rank.rate) : rank.rate;
+
+    const [publishedTerms] = await db
+      .select()
+      .from(schema.terms)
+      .where(eq(schema.terms.isPublished, true))
+      .orderBy(desc(schema.terms.version))
+      .limit(1);
+
+    if (publishedTerms) {
+      const [consent] = await db
+        .select()
+        .from(schema.memberTermsConsents)
+        .where(eq(schema.memberTermsConsents.memberId, memberId))
+        .orderBy(desc(schema.memberTermsConsents.agreedAt))
+        .limit(1);
+      if (consent?.termsId !== publishedTerms.id) {
+        return conflict("最新の約款に同意してから注文してください。");
+      }
+    }
 
     let subtotal = 0;
     const orderItemValues: typeof schema.orderItems.$inferInsert[] = [];
@@ -125,48 +129,98 @@ export async function POST(req: NextRequest) {
     const total = subtotal + taxAmount;
 
     const orderNo = generateOrderNo();
-    for (const item of items) {
-      const updated = await db
-        .update(schema.inventory)
-        .set({
-          availableBoxes: sql`${schema.inventory.availableBoxes} - ${item.boxes}`,
-          updatedAt: new Date(),
-          updatedBy: memberId,
+    const run = isPostgresRuntime()
+      ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(fn)
+      : <T>(fn: (tx: typeof db) => Promise<T>) => fn(db);
+
+    const order = await run(async (tx) => {
+      const [created] = await tx
+        .insert(schema.orders)
+        .values({
+          orderNo,
+          memberId,
+          shippingAddressId,
+          status: "pending",
+          subtotal,
+          taxRate: String(TAX_RATE),
+          taxAmount,
+          total,
+          memo: memo ?? null,
+          lastStatusChangedAt: new Date(),
+          lastStatusChangedBy: memberId,
         })
-        .where(
-          and(
-            eq(schema.inventory.productId, item.productId),
-            gte(schema.inventory.availableBoxes, item.boxes)
+        .returning();
+
+      await tx.insert(schema.orderItems).values(
+        orderItemValues.map((item) => ({ ...item, orderId: created.id }))
+      );
+
+      for (const item of items) {
+        const [currentInventory] = await tx
+          .select({
+            id: schema.inventory.id,
+            availableBoxes: schema.inventory.availableBoxes,
+          })
+          .from(schema.inventory)
+          .where(eq(schema.inventory.productId, item.productId));
+
+        if (!currentInventory || currentInventory.availableBoxes < item.boxes) {
+          throw new Error("INSUFFICIENT_STOCK");
+        }
+
+        const afterBoxes = currentInventory.availableBoxes - item.boxes;
+        const updated = await tx
+          .update(schema.inventory)
+          .set({
+            availableBoxes: afterBoxes,
+            updatedAt: new Date(),
+            updatedBy: memberId,
+          })
+          .where(
+            and(
+              eq(schema.inventory.productId, item.productId),
+              gte(schema.inventory.availableBoxes, item.boxes)
+            )
           )
-        )
-        .returning({ id: schema.inventory.id });
+          .returning({ id: schema.inventory.id });
 
-      if (updated.length === 0) {
-        await restoreInventory();
-        return conflict("在庫が不足しました。注文は作成されていません。");
+        if (updated.length === 0) {
+          throw new Error("INVENTORY_CONFLICT");
+        }
+
+        await tx.insert(schema.inventoryMovements).values({
+          productId: item.productId,
+          orderId: created.id,
+          movementType: "order_allocation",
+          quantityDelta: -item.boxes,
+          quantityBefore: currentInventory.availableBoxes,
+          quantityAfter: afterBoxes,
+          reason: "注文作成",
+          actorId: memberId,
+          actorRole: "member",
+        });
       }
-      decrementedItems.push({ productId: item.productId, boxes: item.boxes });
-    }
 
-    const [order] = await db
-      .insert(schema.orders)
-      .values({
-        orderNo,
-        memberId,
-        shippingAddressId,
-        status: "pending",
-        subtotal,
-        taxRate: String(TAX_RATE),
-        taxAmount,
-        total,
-        memo: memo ?? null,
-      })
-      .returning();
-    createdOrderId = order.id;
+      await tx.insert(schema.orderStatusHistories).values({
+        orderId: created.id,
+        fromStatus: null,
+        toStatus: "pending",
+        reason: "注文作成",
+        actorId: memberId,
+        actorRole: "member",
+      });
 
-    await db.insert(schema.orderItems).values(
-      orderItemValues.map((item) => ({ ...item, orderId: order.id }))
-    );
+      await tx.insert(schema.auditLogs).values({
+        actorId: memberId,
+        actorRole: "member",
+        action: "create_order",
+        targetType: "order",
+        targetId: created.id,
+        afterValue: JSON.stringify({ orderNo, total }),
+      });
+
+      return created;
+    });
 
     try {
       await sendOrderConfirmation({
@@ -179,29 +233,11 @@ export async function POST(req: NextRequest) {
       console.error("Order confirmation email failed:", e);
     }
 
-    await db.insert(schema.auditLogs).values({
-      actorId: memberId,
-      actorRole: "member",
-      action: "create_order",
-      targetType: "order",
-      targetId: order.id,
-      afterValue: JSON.stringify({ orderNo, total: subtotal }),
-    });
-
     return ok({ orderId: order.id, orderNo: order.orderNo }, "注文を作成しました", { status: 201 });
   } catch (e) {
     console.error("create order error:", e);
-    await restoreInventory().catch((restoreError) => {
-      console.error("inventory restore failed after order error:", restoreError);
-    });
-    if (createdOrderId) {
-      await db
-        .update(schema.orders)
-        .set({ status: "cancelled", updatedAt: new Date(), cancelReason: "注文作成中にエラーが発生しました" })
-        .where(eq(schema.orders.id, createdOrderId))
-        .catch((cancelError: unknown) => {
-          console.error("order cancellation after create error failed:", cancelError);
-        });
+    if (e instanceof Error && (e.message === "INSUFFICIENT_STOCK" || e.message === "INVENTORY_CONFLICT")) {
+      return conflict("在庫が不足しました。注文は作成されていません。");
     }
     return internalError("注文の作成に失敗しました。再度お試しください。");
   }

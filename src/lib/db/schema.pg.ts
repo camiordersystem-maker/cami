@@ -7,7 +7,6 @@ import {
   timestamp,
   jsonb,
   pgEnum,
-  serial,
   varchar,
   index,
   uniqueIndex,

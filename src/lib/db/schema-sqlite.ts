@@ -8,7 +8,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 
 // ─── member_ranks ─────────────────────────────────────────────────────────────
 // rate: 掛け率 (0.35 〜 1.00)
@@ -165,6 +165,9 @@ export const orders = sqliteTable(
     cancelReason: text("cancel_reason"),
     cancelBeforeStatus: text("cancel_before_status"),
     memo: text("memo"),
+    deliveredAt: integer("delivered_at", { mode: "timestamp" }),
+    lastStatusChangedAt: integer("last_status_changed_at", { mode: "timestamp" }),
+    lastStatusChangedBy: text("last_status_changed_by"),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -281,6 +284,136 @@ export const terms = sqliteTable("terms", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedBy: text("updated_by").notNull().default("system"),
 });
+
+export const inventoryMovements = sqliteTable(
+  "inventory_movements",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    productId: text("product_id").notNull().references(() => products.id),
+    orderId: text("order_id").references(() => orders.id),
+    movementType: text("movement_type").notNull(),
+    quantityDelta: integer("quantity_delta").notNull(),
+    quantityBefore: integer("quantity_before").notNull(),
+    quantityAfter: integer("quantity_after").notNull(),
+    reason: text("reason").notNull(),
+    actorId: text("actor_id").notNull(),
+    actorRole: text("actor_role").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [
+    index("inventory_movements_product_idx").on(t.productId),
+    index("inventory_movements_order_idx").on(t.orderId),
+  ]
+);
+
+export const orderStatusHistories = sqliteTable(
+  "order_status_histories",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    orderId: text("order_id").notNull().references(() => orders.id),
+    fromStatus: text("from_status"),
+    toStatus: text("to_status").notNull(),
+    reason: text("reason"),
+    actorId: text("actor_id").notNull(),
+    actorRole: text("actor_role").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("order_status_histories_order_idx").on(t.orderId)]
+);
+
+export const memberTermsConsents = sqliteTable(
+  "member_terms_consents",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    memberId: text("member_id").notNull().references(() => members.id),
+    termsId: text("terms_id").notNull().references(() => terms.id),
+    version: integer("version").notNull(),
+    requestId: text("request_id"),
+    ipAddress: text("ip_address"),
+    agreedAt: integer("agreed_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("member_terms_consents_member_terms_unique").on(t.memberId, t.termsId)]
+);
+
+export const passwordResetTokens = sqliteTable(
+  "password_reset_tokens",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userType: text("user_type").notNull(),
+    userId: text("user_id").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    usedAt: integer("used_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("password_reset_tokens_hash_unique").on(t.tokenHash)]
+);
+
+export const invoices = sqliteTable(
+  "invoices",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    invoiceNo: text("invoice_no").notNull(),
+    orderId: text("order_id").notNull().references(() => orders.id),
+    memberId: text("member_id").notNull().references(() => members.id),
+    status: text("status").notNull().default("draft"),
+    issueDate: integer("issue_date", { mode: "timestamp" }),
+    dueDate: integer("due_date", { mode: "timestamp" }),
+    subtotal: integer("subtotal").notNull().default(0),
+    shippingFee: integer("shipping_fee").notNull().default(0),
+    discount: integer("discount").notNull().default(0),
+    adjustment: integer("adjustment").notNull().default(0),
+    taxAmount: integer("tax_amount").notNull().default(0),
+    total: integer("total").notNull().default(0),
+    recipientName: text("recipient_name").notNull(),
+    recipientAddress: text("recipient_address").notNull(),
+    issuerName: text("issuer_name").notNull(),
+    issuerAddress: text("issuer_address").notNull(),
+    issuerRegistrationNumber: text("issuer_registration_number"),
+    bankInformation: text("bank_information"),
+    notes: text("notes"),
+    version: integer("version").notNull().default(1),
+    issuedAt: integer("issued_at", { mode: "timestamp" }),
+    sentAt: integer("sent_at", { mode: "timestamp" }),
+    paidAt: integer("paid_at", { mode: "timestamp" }),
+    cancelledAt: integer("cancelled_at", { mode: "timestamp" }),
+    createdBy: text("created_by").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("invoices_invoice_no_unique").on(t.invoiceNo),
+    index("invoices_order_idx").on(t.orderId),
+    index("invoices_member_idx").on(t.memberId),
+  ]
+);
+
+export const invoiceItems = sqliteTable("invoice_items", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  invoiceId: text("invoice_id").notNull().references(() => invoices.id),
+  description: text("description").notNull(),
+  quantity: integer("quantity").notNull(),
+  unit: text("unit").notNull().default("箱"),
+  unitPrice: integer("unit_price").notNull(),
+  taxRate: real("tax_rate").notNull().default(0.10),
+  subtotal: integer("subtotal").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+
+export const payments = sqliteTable(
+  "payments",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    invoiceId: text("invoice_id").notNull().references(() => invoices.id),
+    amount: integer("amount").notNull(),
+    paymentDate: integer("payment_date", { mode: "timestamp" }).notNull(),
+    method: text("method").notNull(),
+    note: text("note"),
+    createdBy: text("created_by").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("payments_invoice_idx").on(t.invoiceId)]
+);
 
 // ─── notifications ────────────────────────────────────────────────────────────
 

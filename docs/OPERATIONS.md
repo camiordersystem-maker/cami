@@ -2,20 +2,37 @@
 
 ## Billing
 
-The current invoice feature is a monthly aggregate invoice. It does not yet provide full production billing controls such as line-item snapshots, revision history, PDF generation, email resend, partial payment history, or credit note handling.
-
-Until those are implemented, billing must be handled outside this system, and this system should be treated as an order reference only.
+The current production-grade invoice tables (`invoices`, `invoice_items`, `payments`) have been added as expand-only schema. UI/API coverage is still incomplete, so billing remains `NOT READY` as the sole operational billing workflow until PDF/email/reissue/payment flows are completed and tested.
 
 ## Orders And Inventory
 
-Order creation performs guarded inventory decrement and attempts compensation on failure. Because the current Neon HTTP driver does not support interactive transactions, this is not equivalent to a database transaction on PostgreSQL.
+PostgreSQL runtime now uses Neon serverless `Pool` via `drizzle-orm/neon-serverless`, which supports interactive transactions. Order creation writes order header, items, inventory allocation, inventory movement ledger, status history, and audit log in one transaction on PostgreSQL.
 
-Production readiness requires either a transaction-capable PostgreSQL driver or a fully atomic SQL/order workflow.
+SQLite local development keeps a non-transaction fallback for developer ergonomics; production readiness must be judged on staging PostgreSQL.
 
-## Returns And Refunds
+## Inventory Ledger
 
-Returns, refunds, post-shipment cancellation, credit notes, and invoice correction workflows are not implemented. They must be handled outside the system until designed and built.
+`inventory_movements` records:
+
+- `initial`
+- `inbound`
+- `order_allocation`
+- `cancellation_return`
+- `manual_adjustment`
+- `return`
+- `correction`
+
+Manual inventory adjustment requires a reason and records movement history.
 
 ## Terms
 
-Terms publishing exists, but member consent tracking and re-consent enforcement are not implemented.
+Published terms are no longer directly overwritten; editing after publication creates a new draft version. Members must consent to the latest published terms before ordering.
+
+## Health Checks
+
+- `/api/health` returns process health.
+- `/api/readiness` checks database connectivity.
+
+## Returns And Refunds
+
+Returns, refunds, post-shipment cancellation, credit notes, and invoice correction UI remain incomplete. They must be handled outside the system until finished.

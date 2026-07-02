@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -6,13 +6,14 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
 import { sendLowStockAlert } from "@/lib/email";
+import { internalError, ok, validationError } from "@/lib/api-response";
 
 const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD ?? "10");
 
 const updateSchema = z.object({
   productId: z.string(),
   availableBoxes: z.number().int().min(0),
-  note: z.string().max(200).optional(),
+  note: z.string().trim().min(1, "理由を入力してください").max(200),
 });
 
 export async function PUT(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function PUT(req: NextRequest) {
   if (authErr) return authErr;
 
   const parsed = updateSchema.safeParse(await req.json());
-  if (!parsed.success) return NextResponse.json({ error: "Invalid" }, { status: 400 });
+  if (!parsed.success) return validationError("在庫変更理由を入力してください");
 
   try {
     const [current] = await db
@@ -50,6 +51,18 @@ export async function PUT(req: NextRequest) {
       receivedBy: session!.user.id,
     });
 
+    await db.insert(schema.inventoryMovements).values({
+      productId: parsed.data.productId,
+      orderId: null,
+      movementType: newBoxes >= previousBoxes ? "inbound" : "manual_adjustment",
+      quantityDelta: newBoxes - previousBoxes,
+      quantityBefore: previousBoxes,
+      quantityAfter: newBoxes,
+      reason: parsed.data.note,
+      actorId: session!.user.id,
+      actorRole: "admin",
+    });
+
     const lowStock = newBoxes < LOW_STOCK_THRESHOLD;
 
     if (lowStock && previousBoxes >= LOW_STOCK_THRESHOLD) {
@@ -68,9 +81,9 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true, lowStock });
+    return ok({ lowStock });
   } catch (e) {
     console.error("inventory PUT error:", e);
-    return NextResponse.json({ error: "在庫の更新に失敗しました" }, { status: 500 });
+    return internalError("在庫の更新に失敗しました");
   }
 }

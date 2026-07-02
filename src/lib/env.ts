@@ -5,6 +5,10 @@ export function isPostgresUrl(url: string): boolean {
   return PG_URL_PATTERN.test(url);
 }
 
+export function isPostgresRuntime(): boolean {
+  return isPostgresUrl(process.env.DATABASE_URL ?? "");
+}
+
 export function isSqliteUrl(url: string): boolean {
   return SQLITE_URL_PATTERN.test(url);
 }

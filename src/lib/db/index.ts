@@ -10,15 +10,23 @@ function createDb() {
   const url = process.env.DATABASE_URL ?? "";
 
   if (isPostgresUrl(url)) {
-    // ── Production: Neon PostgreSQL ──────────────────────────────────────────
+    // ── PostgreSQL: Neon serverless Pool with interactive transactions ───────
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { neon } = require("@neondatabase/serverless");
+    const { Pool, neonConfig } = require("@neondatabase/serverless");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { drizzle } = require("drizzle-orm/neon-http");
+    const { drizzle } = require("drizzle-orm/neon-serverless");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const schemaPg = require("./schema-pg");
-    const sql = neon(url);
-    return drizzle(sql, { schema: schemaPg }) as ReturnType<typeof import("drizzle-orm/better-sqlite3")["drizzle"]>;
+    if (!neonConfig.webSocketConstructor && globalThis.WebSocket) {
+      neonConfig.webSocketConstructor = globalThis.WebSocket;
+    }
+    const pool = new Pool({
+      connectionString: url,
+      max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+      idleTimeoutMillis: Number(process.env.DATABASE_POOL_IDLE_TIMEOUT_MS ?? 10_000),
+      connectionTimeoutMillis: Number(process.env.DATABASE_POOL_CONNECTION_TIMEOUT_MS ?? 10_000),
+    });
+    return drizzle(pool, { schema: schemaPg }) as ReturnType<typeof import("drizzle-orm/better-sqlite3")["drizzle"]>;
   }
 
   // ── Local: SQLite (better-sqlite3) ────────────────────────────────────────

@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { requireEditor } from "@/lib/admin-auth";
+import { conflict, internalError, notFound, ok } from "@/lib/api-response";
+import { isPostgresRuntime } from "@/lib/env";
 
 export async function POST(
   _req: NextRequest,
@@ -20,46 +22,89 @@ export async function POST(
     .from(schema.orders)
     .where(eq(schema.orders.id, params.id));
 
-  if (!order) return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
+  if (!order) return notFound("注文が見つかりません");
 
   if (order.status !== "cancel_requested") {
-    return NextResponse.json({ error: "キャンセル申込中の注文ではありません" }, { status: 400 });
+    return conflict("キャンセル申込中の注文ではありません");
   }
 
   try {
-    const items = await db
-      .select({ productId: schema.orderItems.productId, boxes: schema.orderItems.boxes })
-      .from(schema.orderItems)
-      .where(eq(schema.orderItems.orderId, order.id));
+    const run = isPostgresRuntime()
+      ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(fn)
+      : <T>(fn: (tx: typeof db) => Promise<T>) => fn(db);
 
-    await db
-      .update(schema.orders)
-      .set({ status: "cancelled", updatedAt: new Date() })
-      .where(eq(schema.orders.id, order.id));
+    await run(async (tx) => {
+      const items = await tx
+        .select({ productId: schema.orderItems.productId, boxes: schema.orderItems.boxes })
+        .from(schema.orderItems)
+        .where(eq(schema.orderItems.orderId, order.id));
 
-    for (const item of items) {
-      await db
-        .update(schema.inventory)
+      const updated = await tx
+        .update(schema.orders)
         .set({
-          availableBoxes: sql`${schema.inventory.availableBoxes} + ${item.boxes}`,
+          status: "cancelled",
           updatedAt: new Date(),
+          lastStatusChangedAt: new Date(),
+          lastStatusChangedBy: session!.user.id,
         })
-        .where(eq(schema.inventory.productId, item.productId));
-    }
+        .where(and(eq(schema.orders.id, order.id), eq(schema.orders.status, "cancel_requested")))
+        .returning({ id: schema.orders.id });
 
-    await db.insert(schema.auditLogs).values({
-      actorId: session!.user.id,
-      actorRole: "admin",
-      action: "cancel_approve",
-      targetType: "order",
-      targetId: order.id,
-      beforeValue: JSON.stringify({ status: "cancel_requested" }),
-      afterValue: JSON.stringify({ status: "cancelled" }),
+      if (updated.length === 0) throw new Error("ORDER_UPDATE_CONFLICT");
+
+      for (const item of items) {
+        const [currentInventory] = await tx
+          .select({ availableBoxes: schema.inventory.availableBoxes })
+          .from(schema.inventory)
+          .where(eq(schema.inventory.productId, item.productId));
+        if (!currentInventory) throw new Error("INVENTORY_NOT_FOUND");
+        await tx
+          .update(schema.inventory)
+          .set({
+            availableBoxes: sql`${schema.inventory.availableBoxes} + ${item.boxes}`,
+            updatedAt: new Date(),
+            updatedBy: session!.user.id,
+          })
+          .where(eq(schema.inventory.productId, item.productId));
+        await tx.insert(schema.inventoryMovements).values({
+          productId: item.productId,
+          orderId: order.id,
+          movementType: "cancellation_return",
+          quantityDelta: item.boxes,
+          quantityBefore: currentInventory.availableBoxes,
+          quantityAfter: currentInventory.availableBoxes + item.boxes,
+          reason: "キャンセル承認",
+          actorId: session!.user.id,
+          actorRole: "admin",
+        });
+      }
+
+      await tx.insert(schema.orderStatusHistories).values({
+        orderId: order.id,
+        fromStatus: "cancel_requested",
+        toStatus: "cancelled",
+        reason: "キャンセル承認",
+        actorId: session!.user.id,
+        actorRole: "admin",
+      });
+
+      await tx.insert(schema.auditLogs).values({
+        actorId: session!.user.id,
+        actorRole: "admin",
+        action: "cancel_approve",
+        targetType: "order",
+        targetId: order.id,
+        beforeValue: JSON.stringify({ status: "cancel_requested" }),
+        afterValue: JSON.stringify({ status: "cancelled" }),
+      });
     });
 
-    return NextResponse.json({ ok: true });
+    return ok({ id: order.id });
   } catch (e) {
     console.error("cancel approve error:", e);
-    return NextResponse.json({ error: "キャンセル承認に失敗しました" }, { status: 500 });
+    if (e instanceof Error && e.message === "ORDER_UPDATE_CONFLICT") {
+      return conflict("注文状態が他の操作で変更されました。再読み込みしてください。");
+    }
+    return internalError("キャンセル承認に失敗しました");
   }
 }

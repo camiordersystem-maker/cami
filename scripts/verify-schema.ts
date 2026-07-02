@@ -19,6 +19,13 @@ const requiredExports = [
   "notifications",
   "announcements",
   "announcementReads",
+  "inventoryMovements",
+  "orderStatusHistories",
+  "memberTermsConsents",
+  "passwordResetTokens",
+  "invoices",
+  "invoiceItems",
+  "payments",
 ];
 
 for (const key of requiredExports) {

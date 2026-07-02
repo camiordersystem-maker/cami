@@ -30,6 +30,13 @@ export const {
   notifications,
   announcements,
   announcementReads,
+  inventoryMovements,
+  orderStatusHistories,
+  memberTermsConsents,
+  passwordResetTokens,
+  invoices,
+  invoiceItems,
+  payments,
   memberRanksRelations,
   membersRelations,
   shippingAddressesRelations,
@@ -83,3 +90,9 @@ export type NewNotification = typeof notifications.$inferInsert;
 export type Announcement = typeof announcements.$inferSelect;
 export type NewAnnouncement = typeof announcements.$inferInsert;
 export type AnnouncementRead = typeof announcementReads.$inferSelect;
+export type InventoryMovement = typeof inventoryMovements.$inferSelect;
+export type NewInventoryMovement = typeof inventoryMovements.$inferInsert;
+export type OrderStatusHistory = typeof orderStatusHistories.$inferSelect;
+export type NewOrderStatusHistory = typeof orderStatusHistories.$inferInsert;
+export type MemberTermsConsent = typeof memberTermsConsents.$inferSelect;
+export type NewMemberTermsConsent = typeof memberTermsConsents.$inferInsert;
