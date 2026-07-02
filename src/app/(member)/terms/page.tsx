@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+import type { MemberTermsConsent, Terms } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { formatDateTime } from "@/lib/utils";
+import { TermsConsentButton } from "./TermsConsentButton";
 
 export const metadata = { title: "契約書・約款" };
 
@@ -11,7 +13,8 @@ export default async function MemberTermsPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  let published = null;
+  let published: Terms | null = null;
+  let agreed = false;
   try {
     const rows = await db
       .select()
@@ -19,6 +22,14 @@ export default async function MemberTermsPage() {
       .where(eq(schema.terms.isPublished, true))
       .limit(1);
     published = rows[0] ?? null;
+    if (published) {
+      const consents = await db
+        .select()
+        .from(schema.memberTermsConsents)
+        .where(eq(schema.memberTermsConsents.memberId, session.user.id))
+        .limit(10);
+      agreed = consents.some((consent: MemberTermsConsent) => consent.termsId === published?.id);
+    }
   } catch {
     // terms table not yet migrated
   }
@@ -43,6 +54,7 @@ export default async function MemberTermsPage() {
             <pre className="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed">
               {published.content}
             </pre>
+            <TermsConsentButton agreed={agreed} />
           </>
         )}
       </div>

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { requireEditor } from "@/lib/admin-auth";
+import { conflict, internalError, notFound, ok, validationError } from "@/lib/api-response";
 
 export async function GET() {
   const session = await auth();
@@ -30,7 +31,7 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
   if (typeof body.content !== "string") {
-    return NextResponse.json({ error: "content is required" }, { status: 400 });
+    return validationError("content is required");
   }
 
   const adminId = session!.user.id;
@@ -42,7 +43,14 @@ export async function PUT(req: NextRequest) {
       .orderBy(desc(schema.terms.version))
       .limit(1);
 
-    if (current) {
+    if (current?.isPublished) {
+      await db.insert(schema.terms).values({
+        content: body.content,
+        version: current.version + 1,
+        isPublished: false,
+        updatedBy: adminId,
+      });
+    } else if (current) {
       await db
         .update(schema.terms)
         .set({ content: body.content, updatedAt: new Date(), updatedBy: adminId })
@@ -51,10 +59,10 @@ export async function PUT(req: NextRequest) {
       await db.insert(schema.terms).values({ content: body.content, updatedBy: adminId });
     }
 
-    return NextResponse.json({ ok: true });
+    return ok({ saved: true });
   } catch (e) {
     console.error("terms PUT error:", e);
-    return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
+    return internalError("保存に失敗しました");
   }
 }
 
@@ -71,7 +79,11 @@ export async function PATCH() {
       .limit(1);
 
     if (!current) {
-      return NextResponse.json({ error: "約款がありません" }, { status: 404 });
+      return notFound("約款がありません");
+    }
+
+    if (current.isPublished) {
+      return conflict("公開済み約款は直接再公開できません。新しい下書きを作成してください。");
     }
 
     await db
@@ -79,9 +91,9 @@ export async function PATCH() {
       .set({ isPublished: true, publishedAt: new Date(), updatedAt: new Date(), updatedBy: session!.user.id })
       .where(eq(schema.terms.id, current.id));
 
-    return NextResponse.json({ ok: true });
+    return ok({ published: true });
   } catch (e) {
     console.error("terms PATCH error:", e);
-    return NextResponse.json({ error: "公開に失敗しました" }, { status: 500 });
+    return internalError("公開に失敗しました");
   }
 }
