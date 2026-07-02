@@ -11,13 +11,24 @@ const PUBLIC_PATHS = [
   "/favicon.ico",
 ]
 
+function withSecurityHeaders(response: NextResponse) {
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:")
+  if (process.env.NODE_ENV === "production") {
+    response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+  }
+  return response
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 公開パスはそのまま通す
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
   if (isPublic) {
-    return NextResponse.next()
+    return withSecurityHeaders(NextResponse.next())
   }
 
   // セッションcookieの存在確認のみ（復号はしない）
@@ -31,10 +42,10 @@ export function middleware(request: NextRequest) {
     // 未ログイン → /login にリダイレクト
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
-    return NextResponse.redirect(loginUrl)
+    return withSecurityHeaders(NextResponse.redirect(loginUrl))
   }
 
-  return NextResponse.next()
+  return withSecurityHeaders(NextResponse.next())
 }
 
 export const config = {

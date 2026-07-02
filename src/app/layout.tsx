@@ -27,12 +27,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isStaging = process.env.NEXT_PUBLIC_APP_ENV === "staging" || process.env.VERCEL_ENV === "preview";
   return (
     <html
       lang="ja"
       className={`${inter.variable} ${notoSansJP.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        {isStaging && (
+          <div className="bg-amber-500 px-4 py-2 text-center text-sm font-semibold text-white">
+            ステージング環境
+          </div>
+        )}
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>

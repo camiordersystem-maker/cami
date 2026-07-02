@@ -6,11 +6,38 @@ Required settings:
 
 - Dedicated Vercel Preview or staging URL.
 - Dedicated Neon staging database.
-- Dedicated environment variables.
+- Dedicated `DATABASE_URL` and `AUTH_SECRET`.
+- `APP_ENV=staging` and `NEXT_PUBLIC_APP_ENV=staging`.
+- `STAGING_EMAIL_MODE=suppress` or `STAGING_EMAIL_MODE=redirect` with `STAGING_EMAIL_TO`.
 - No production data copy.
-- Email sandbox, suppression, or fixed test recipients.
-- Visible staging banner in the UI.
 
-Dummy data must be idempotent and must refuse to run against production.
+The UI displays `ステージング環境` when `NEXT_PUBLIC_APP_ENV=staging` or Vercel Preview is active.
 
-This repository does not yet include a complete staging reset command; production readiness remains `NOT READY` until staging PostgreSQL tests pass.
+## Seed
+
+Run only against staging-like database hosts/names. The command refuses production and refuses non-staging names unless `ALLOW_NON_STAGING_DB=true` is intentionally set.
+
+```bash
+npm run db:migrate:pg
+npm run seed:staging
+```
+
+The seed creates superadmin/editor/viewer accounts, approved/pending/suspended/rejected members, active/inactive products, stock/empty/low-stock inventory, shipping addresses, and a published terms record.
+
+## Reset
+
+```bash
+CONFIRM_STAGING_RESET=true npm run reset:staging
+npm run seed:staging
+```
+
+Reset deletes only staging-pattern dummy records such as `stage-%@example.com`, `stage-%` products, and `STAGE-%` orders/invoices. It does not perform database-wide deletes.
+
+## Verification
+
+```bash
+npm run db:verify
+npm run preflight
+```
+
+Production/staging DB separation still must be confirmed in Vercel and Neon dashboards or via CLI with secrets hidden.

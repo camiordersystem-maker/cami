@@ -6,6 +6,7 @@ import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -25,6 +26,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+        if (!checkRateLimit(rateLimitKey("login", email), 10, 15 * 60 * 1000)) {
+          return null;
+        }
 
         const [admin] = await db
           .select()

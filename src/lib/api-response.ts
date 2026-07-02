@@ -6,6 +6,7 @@ export type ApiErrorCode =
   | "FORBIDDEN"
   | "NOT_FOUND"
   | "CONFLICT"
+  | "RATE_LIMIT"
   | "INTERNAL_ERROR";
 
 export function requestId(): string {
@@ -42,6 +43,7 @@ export const unauthorized = () => fail(401, "UNAUTHORIZED", "ログインして�
 export const forbidden = () => fail(403, "FORBIDDEN", "権限がありません");
 export const notFound = (message = "対象が見つかりません") => fail(404, "NOT_FOUND", message);
 export const conflict = (message: string) => fail(409, "CONFLICT", message);
+export const rateLimited = (message = "試行回数が多すぎます") => fail(429, "RATE_LIMIT", message);
 export const validationError = (message = "入力内容を確認してください") =>
   fail(400, "VALIDATION_ERROR", message);
 export const internalError = (message = "処理に失敗しました") => fail(500, "INTERNAL_ERROR", message);

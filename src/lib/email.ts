@@ -3,10 +3,26 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "noreply@localhost";
 const isDev = process.env.RESEND_API_KEY === "re_dummy_local_dev";
+const isStaging = process.env.VERCEL_ENV === "preview" || process.env.APP_ENV === "staging";
+const stagingEmailMode = process.env.STAGING_EMAIL_MODE ?? "suppress";
+const stagingTestRecipient = process.env.STAGING_EMAIL_TO;
 
 async function send(to: string, subject: string, html: string) {
   if (isDev) {
-    console.log("\n📧 [DEV EMAIL]", { to, subject });
+    console.log("\n[DEV EMAIL]", { to, subject });
+    return;
+  }
+  if (isStaging) {
+    if (stagingEmailMode === "redirect" && stagingTestRecipient) {
+      await resend.emails.send({
+        from: FROM,
+        to: stagingTestRecipient,
+        subject: `[STAGING redirect:${to}] ${subject}`,
+        html,
+      });
+    } else {
+      console.log("staging_email_suppressed", { to, subject });
+    }
     return;
   }
   await resend.emails.send({ from: FROM, to, subject, html });

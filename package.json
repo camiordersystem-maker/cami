@@ -19,6 +19,8 @@
     "db:studio": "drizzle-kit studio",
     "seed": "npx tsx src/lib/db/seed.ts",
     "seed:pg": "npx tsx src/lib/db/seed.pg.ts",
+    "seed:staging": "npx tsx scripts/seed-staging.ts",
+    "reset:staging": "npx tsx scripts/reset-staging.ts",
     "preflight": "npx tsx scripts/preflight.ts",
     "smoke:production": "npx tsx scripts/smoke-production.ts",
     "release:production": "npx tsx scripts/release-production.ts",
