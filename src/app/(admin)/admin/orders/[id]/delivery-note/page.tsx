@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect, notFound } from "next/navigation";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import PrintButton from "@/app/(member)/orders/[id]/invoice/PrintButton";
 
 async function getSettings() {

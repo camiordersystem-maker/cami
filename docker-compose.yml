@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cami-local-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cami_local
+      POSTGRES_USER: cami
+      POSTGRES_PASSWORD: cami_local_password
+    ports:
+      - "54329:5432"
+    volumes:
+      - cami_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cami -d cami_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: cami-local-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+volumes:
+  cami_postgres_data:

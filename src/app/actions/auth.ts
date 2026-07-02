@@ -1,7 +1,6 @@
 "use server";
 
 import { signIn, signOut } from "@/auth";
-import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 
 export async function login(formData: FormData) {

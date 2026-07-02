@@ -30,7 +30,7 @@ type Address = {
 type CartItem = { productId: string; name: string; boxes: number; unitPrice: number };
 
 export default function ProductsPage() {
-  const { data: session } = useSession();
+  useSession();
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>([]);

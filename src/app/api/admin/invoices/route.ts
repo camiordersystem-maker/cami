@@ -6,7 +6,7 @@ import { eq, desc, and, gte, lt } from "drizzle-orm";
 import { requireEditor } from "@/lib/admin-auth";
 import { generateInvoiceNo, lastDayOfMonth } from "@/lib/utils";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

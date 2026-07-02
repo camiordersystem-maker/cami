@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch(`/api/admin/orders/${params.id}`);
     if (res.ok) {
       const data = await res.json();
@@ -79,9 +79,9 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
       setTrackingInput(data.trackingNumber ?? "");
     }
     setLoading(false);
-  }
+  }, [params.id]);
 
-  useEffect(() => { load(); }, [params.id]);
+  useEffect(() => { load(); }, [load]);
 
   async function patch(body: Record<string, unknown>) {
     setUpdating(true);

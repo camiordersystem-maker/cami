@@ -54,7 +54,7 @@ export async function GET(
       .from(schema.shippingAddresses)
       .where(and(eq(schema.shippingAddresses.memberId, params.id), isNull(schema.shippingAddresses.deletedAt)));
 
-    const { password: _, ...memberData } = member;
+    const memberData = Object.fromEntries(Object.entries(member).filter(([key]) => key !== "password"));
     return NextResponse.json({ ...memberData, rank: rank ?? null, orders, addresses });
   } catch (e) {
     console.error("admin member GET error:", e);

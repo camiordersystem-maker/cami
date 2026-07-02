@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
 
@@ -36,7 +36,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
   const [infoForm, setInfoForm] = useState({ companyName: "", contactName: "", phone: "", address: "", businessDescription: "" });
   const [savingInfo, setSavingInfo] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [mRes, rRes] = await Promise.all([
       fetch(`/api/admin/members/${params.id}`),
       fetch("/api/admin/ranks"),
@@ -55,9 +55,9 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
     }
     if (rRes.ok) setRanks(await rRes.json());
     setLoading(false);
-  }
+  }, [params.id]);
 
-  useEffect(() => { load(); }, [params.id]);
+  useEffect(() => { load(); }, [load]);
 
   async function patch(body: Record<string, unknown>, successMsg: string) {
     setUpdating(true);

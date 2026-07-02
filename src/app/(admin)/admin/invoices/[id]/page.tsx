@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
+import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL } from "@/lib/utils";
 
 type SystemSettings = {
   companyName: string;
@@ -58,7 +58,7 @@ export default function AdminInvoiceDetailPage({ params }: { params: { id: strin
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const [invoiceRes, settingsRes] = await Promise.all([
       fetch(`/api/admin/invoices/${params.id}`),
       fetch("/api/admin/settings"),
@@ -66,9 +66,9 @@ export default function AdminInvoiceDetailPage({ params }: { params: { id: strin
     if (invoiceRes.ok) setInvoice(await invoiceRes.json());
     if (settingsRes.ok) setSettings(await settingsRes.json());
     setLoading(false);
-  }
+  }, [params.id]);
 
-  useEffect(() => { load(); }, [params.id]);
+  useEffect(() => { load(); }, [load]);
 
   async function updatePaymentStatus(status: string) {
     setUpdating(true);
