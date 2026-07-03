@@ -15,6 +15,13 @@
       "when": 1782200000000,
       "tag": "0001_new_features",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782300000000,
+      "tag": "0002_phase2_integrity",
+      "breakpoints": true
     }
   ]
 }

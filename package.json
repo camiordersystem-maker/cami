@@ -2,6 +2,9 @@
   "name": "cami-order-system",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev --webpack -p 3000",
     "dev:member": "next dev --webpack -p 3000",
@@ -24,7 +27,7 @@
     "preflight": "npx tsx scripts/preflight.ts",
     "smoke:production": "npx tsx scripts/smoke-production.ts",
     "release:production": "npx tsx scripts/release-production.ts",
-    "vercel-build": "next build --webpack",
+    "vercel-build": "npx tsx src/lib/db/migrate.pg.ts && next build --webpack",
     "local:setup": "tsx scripts/local-setup.ts",
     "local:start": "docker compose up -d",
     "local:stop": "docker compose stop",

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type OrderDetail = {
   id: string;
@@ -59,7 +60,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセルを承認しました", ok: true }); load(); }
-    else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
   }
 
   async function handleCancelReject() {
@@ -70,7 +71,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセル申込を拒否しました", ok: true }); load(); }
-    else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
   }
 
   async function load() {
@@ -111,7 +112,7 @@ export default function AdminOrderDetailPage() {
       setMessage({ text: "更新しました", ok: true });
       load();
     } else {
-      setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+      setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
     }
   }
 
@@ -122,12 +123,22 @@ export default function AdminOrderDetailPage() {
       return;
     }
     const body: Record<string, string> = { status: nextStatus };
-    if (nextStatus === "shipped" && trackingInput) body.trackingNumber = trackingInput;
+    if (nextStatus === "shipped") {
+      if (!trackingInput.trim()) {
+        setMessage({ text: "発送済みにするには追跡番号を入力してください", ok: false });
+        return;
+      }
+      body.trackingNumber = trackingInput;
+    }
     await patch(body);
   }
 
   async function confirmCancel() {
-    await patch({ status: "cancelled", cancelReason: cancelReasonInput || undefined });
+    if (!cancelReasonInput.trim()) {
+      setMessage({ text: "キャンセル理由を入力してください", ok: false });
+      return;
+    }
+    await patch({ status: "cancelled", cancelReason: cancelReasonInput });
     setShowCancelForm(false);
   }
 
@@ -182,7 +193,7 @@ export default function AdminOrderDetailPage() {
           <textarea
             value={cancelReasonInput}
             onChange={(e) => setCancelReasonInput(e.target.value)}
-            placeholder="キャンセル理由（任意）"
+            placeholder="キャンセル理由（必須）"
             rows={2}
             className="w-full text-sm border border-red-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-red-400 bg-white resize-none"
           />

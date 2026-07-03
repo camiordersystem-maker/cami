@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { apiErrorMessage } from "@/lib/client-api";
 
 export default function RegisterPage() {
   const [error, setError] = useState("");
@@ -30,11 +31,11 @@ export default function RegisterPage() {
       body: JSON.stringify(body),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "エラーが発生しました");
+      setError(apiErrorMessage(data, "エラーが発生しました"));
       return;
     }
 

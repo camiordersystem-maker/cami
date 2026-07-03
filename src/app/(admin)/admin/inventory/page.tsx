@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDateTime } from "@/lib/utils";
+import { apiData, apiErrorMessage } from "@/lib/client-api";
 
 type InventoryItem = {
   productId: string;
@@ -74,11 +75,11 @@ export default function AdminInventoryPage() {
       if (res.ok) {
         setEditing(null);
         setNoteValues((prev) => ({ ...prev, [productId]: "" }));
-        const isLow = (data as { lowStock?: boolean }).lowStock;
+        const isLow = apiData<{ lowStock?: boolean }>(data)?.lowStock;
         setMessage({ text: isLow ? "在庫数を更新しました（在庫が少なくなっています）" : "在庫数を更新しました", ok: true });
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "更新に失敗しました"), ok: false });
       }
     } catch {
       setSaving(null);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Terms = {
   id: string;
@@ -77,7 +78,7 @@ export default function AdminTermsPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: d.error ?? "公開に失敗しました", ok: false });
+      setMessage({ text: apiErrorMessage(d, "公開に失敗しました"), ok: false });
     }
   }
 

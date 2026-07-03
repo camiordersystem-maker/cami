@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { apiData, apiErrorMessage } from "@/lib/client-api";
 
 type Product = {
   id: string;
@@ -103,9 +104,10 @@ export default function ProductsPage() {
         memo: memo || undefined,
       }),
     });
-    const data = await res.json();
+    const json = await res.json().catch(() => null);
     setOrdering(false);
-    if (!res.ok) { setError(data.error ?? "エラーが発生しました"); return; }
+    if (!res.ok) { setError(apiErrorMessage(json, "エラーが発生しました")); return; }
+    const data = apiData<{ orderId: string }>(json);
     router.push(`/orders/${data.orderId}`);
   }
 
