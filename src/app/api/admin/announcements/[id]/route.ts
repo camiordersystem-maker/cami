@@ -7,15 +7,15 @@ import { requireEditor } from "@/lib/admin-auth";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
   if (authErr) return authErr;
 
   try {
-    await db.delete(schema.announcementReads).where(eq(schema.announcementReads.announcementId, params.id));
-    await db.delete(schema.announcements).where(eq(schema.announcements.id, params.id));
+    await db.delete(schema.announcementReads).where(eq(schema.announcementReads.announcementId, (await params).id));
+    await db.delete(schema.announcements).where(eq(schema.announcements.id, (await params).id));
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("announcement DELETE error:", e);

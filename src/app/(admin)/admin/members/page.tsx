@@ -11,12 +11,13 @@ export const metadata = { title: "会員管理" };
 export default async function AdminMembersPage({
   searchParams,
 }: {
-  searchParams: { status?: string };
+  searchParams: Promise<{ status?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const statusFilter = searchParams.status ?? "all";
+  const resolvedSearchParams = await searchParams;
+  const statusFilter = resolvedSearchParams.status ?? "all";
 
   const all = await db
     .select({

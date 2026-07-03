@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,14 +22,14 @@ export async function POST(
       .from(schema.announcementReads)
       .where(
         and(
-          eq(schema.announcementReads.announcementId, params.id),
+          eq(schema.announcementReads.announcementId, (await params).id),
           eq(schema.announcementReads.memberId, memberId)
         )
       );
 
     if (!existing) {
       await db.insert(schema.announcementReads).values({
-        announcementId: params.id,
+        announcementId: (await params).id,
         memberId,
         readAt: new Date(),
       });

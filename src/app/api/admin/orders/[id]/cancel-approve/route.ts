@@ -9,7 +9,7 @@ import { isPostgresRuntime } from "@/lib/env";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -20,7 +20,7 @@ export async function POST(
       id: schema.orders.id, status: schema.orders.status, memberId: schema.orders.memberId,
     })
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, (await params).id));
 
   if (!order) return notFound("注文が見つかりません");
 

@@ -7,7 +7,7 @@ import { requireEditor } from "@/lib/admin-auth";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -19,7 +19,7 @@ export async function POST(
       cancelBeforeStatus: schema.orders.cancelBeforeStatus,
     })
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, (await params).id));
 
   if (!order) return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
 

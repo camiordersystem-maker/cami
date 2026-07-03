@@ -15,18 +15,19 @@ async function getSettings() {
 
 export const metadata = { title: "請求書" };
 
-export default async function InvoicePage({ params }: { params: { id: string } }) {
+export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
   if (!session) redirect("/login");
 
   const [order] = await db
     .select()
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, id));
 
   if (!order || order.memberId !== session.user.id) notFound();
   if (!["confirmed", "shipped", "delivered"].includes(order.status)) {
-    redirect(`/orders/${params.id}`);
+    redirect(`/orders/${id}`);
   }
 
   const items = await db
@@ -54,7 +55,7 @@ export default async function InvoicePage({ params }: { params: { id: string } }
     <div className="min-h-screen bg-white">
       {/* Print Controls */}
       <div className="no-print bg-slate-100 px-8 py-3 flex items-center justify-between border-b border-slate-200">
-        <a href={`/orders/${params.id}`} className="text-sm text-blue-600 hover:underline">
+        <a href={`/orders/${id}`} className="text-sm text-blue-600 hover:underline">
           ← 注文詳細に戻る
         </a>
         <PrintButton />

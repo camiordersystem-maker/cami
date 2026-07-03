@@ -7,7 +7,7 @@ import { requireEditor } from "@/lib/admin-auth";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
@@ -18,7 +18,7 @@ export async function GET(
     const [invoice] = await db
       .select()
       .from(schema.monthlyInvoices)
-      .where(eq(schema.monthlyInvoices.id, params.id));
+      .where(eq(schema.monthlyInvoices.id, (await params).id));
 
     if (!invoice) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -68,7 +68,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -87,12 +87,12 @@ export async function PATCH(
     const [invoice] = await db
       .select({ id: schema.monthlyInvoices.id, memberId: schema.monthlyInvoices.memberId, invoiceNo: schema.monthlyInvoices.invoiceNo, paymentStatus: schema.monthlyInvoices.paymentStatus })
       .from(schema.monthlyInvoices)
-      .where(eq(schema.monthlyInvoices.id, params.id));
+      .where(eq(schema.monthlyInvoices.id, (await params).id));
 
     await db
       .update(schema.monthlyInvoices)
       .set(updates as Partial<typeof schema.monthlyInvoices.$inferInsert>)
-      .where(eq(schema.monthlyInvoices.id, params.id));
+      .where(eq(schema.monthlyInvoices.id, (await params).id));
 
     if (body.paymentStatus && invoice && invoice.paymentStatus !== "paid" && body.paymentStatus === "paid") {
       await db.insert(schema.notifications).values({

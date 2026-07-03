@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
 
 type Member = {
@@ -23,7 +24,8 @@ type Member = {
 
 type Rank = { id: string; name: string; rate: number };
 
-export default function AdminMemberDetailPage({ params }: { params: { id: string } }) {
+export default function AdminMemberDetailPage() {
+  const { id } = useParams() as { id: string };
   const [member, setMember] = useState<Member | null>(null);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,9 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
   const [infoForm, setInfoForm] = useState({ companyName: "", contactName: "", phone: "", address: "", businessDescription: "" });
   const [savingInfo, setSavingInfo] = useState(false);
 
-  const load = useCallback(async () => {
+  async function load() {
     const [mRes, rRes] = await Promise.all([
-      fetch(`/api/admin/members/${params.id}`),
+      fetch(`/api/admin/members/${id}`),
       fetch("/api/admin/ranks"),
     ]);
     if (mRes.ok) {
@@ -55,15 +57,38 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
     }
     if (rRes.ok) setRanks(await rRes.json());
     setLoading(false);
-  }, [params.id]);
+  }
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    async function loadInitial() {
+      const [mRes, rRes] = await Promise.all([
+        fetch(`/api/admin/members/${id}`),
+        fetch("/api/admin/ranks"),
+      ]);
+      if (mRes.ok) {
+        const data = await mRes.json();
+        setMember(data);
+        setSelectedRank(data.rankId);
+        setInfoForm({
+          companyName: data.companyName,
+          contactName: data.contactName,
+          phone: data.phone,
+          address: data.address,
+          businessDescription: data.businessDescription ?? "",
+        });
+      }
+      if (rRes.ok) setRanks(await rRes.json());
+      setLoading(false);
+    }
+
+    void loadInitial();
+  }, [id]);
 
   async function patch(body: Record<string, unknown>, successMsg: string) {
     setUpdating(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/admin/members/${params.id}`, {
+      const res = await fetch(`/api/admin/members/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -99,7 +124,7 @@ export default function AdminMemberDetailPage({ params }: { params: { id: string
     setSavingInfo(true);
     setMessage(null);
     try {
-      const res = await fetch(`/api/admin/members/${params.id}`, {
+      const res = await fetch(`/api/admin/members/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

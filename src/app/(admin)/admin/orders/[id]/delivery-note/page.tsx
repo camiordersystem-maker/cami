@@ -15,7 +15,8 @@ async function getSettings() {
 
 export const metadata = { title: "納品書" };
 
-export default async function DeliveryNotePage({ params }: { params: { id: string } }) {
+export default async function DeliveryNotePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") redirect("/login");
 
@@ -24,7 +25,7 @@ export default async function DeliveryNotePage({ params }: { params: { id: strin
   const [order] = await db
     .select()
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, id));
 
   if (!order) notFound();
 
@@ -47,7 +48,7 @@ export default async function DeliveryNotePage({ params }: { params: { id: strin
     <div className="min-h-screen bg-white">
       {/* Print Controls */}
       <div className="no-print bg-slate-100 px-8 py-3 flex items-center justify-between border-b border-slate-200">
-        <a href={`/admin/orders/${params.id}`} className="text-sm text-blue-600 hover:underline">
+        <a href={`/admin/orders/${id}`} className="text-sm text-blue-600 hover:underline">
           ← 注文詳細に戻る
         </a>
         <PrintButton />

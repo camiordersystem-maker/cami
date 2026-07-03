@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 
 type OrderDetail = {
@@ -40,7 +41,8 @@ const TRANSITIONS: Record<string, { label: string; next: string; color: string }
   cancel_requested: [],
 };
 
-export default function AdminOrderDetailPage({ params }: { params: { id: string } }) {
+export default function AdminOrderDetailPage() {
+  const { id } = useParams() as { id: string };
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -53,7 +55,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     if (!confirm("キャンセルを承認しますか？在庫が戻されます。")) return;
     setUpdating(true);
     setMessage(null);
-    const res = await fetch(`/api/admin/orders/${params.id}/cancel-approve`, { method: "POST" });
+    const res = await fetch(`/api/admin/orders/${id}/cancel-approve`, { method: "POST" });
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセルを承認しました", ok: true }); load(); }
@@ -64,29 +66,41 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     if (!confirm("キャンセル申込を拒否しますか？注文は元のステータスに戻ります。")) return;
     setUpdating(true);
     setMessage(null);
-    const res = await fetch(`/api/admin/orders/${params.id}/cancel-reject`, { method: "POST" });
+    const res = await fetch(`/api/admin/orders/${id}/cancel-reject`, { method: "POST" });
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセル申込を拒否しました", ok: true }); load(); }
     else setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
   }
 
-  const load = useCallback(async () => {
-    const res = await fetch(`/api/admin/orders/${params.id}`);
+  async function load() {
+    const res = await fetch(`/api/admin/orders/${id}`);
     if (res.ok) {
       const data = await res.json();
       setOrder(data);
       setTrackingInput(data.trackingNumber ?? "");
     }
     setLoading(false);
-  }, [params.id]);
+  }
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    async function loadInitial() {
+      const res = await fetch(`/api/admin/orders/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data);
+        setTrackingInput(data.trackingNumber ?? "");
+      }
+      setLoading(false);
+    }
+
+    void loadInitial();
+  }, [id]);
 
   async function patch(body: Record<string, unknown>) {
     setUpdating(true);
     setMessage(null);
-    const res = await fetch(`/api/admin/orders/${params.id}`, {
+    const res = await fetch(`/api/admin/orders/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

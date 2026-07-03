@@ -6,7 +6,7 @@ import { eq, and } from "drizzle-orm";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +20,7 @@ export async function POST(
       .set({ isRead: true })
       .where(
         and(
-          eq(schema.notifications.id, params.id),
+          eq(schema.notifications.id, (await params).id),
           eq(schema.notifications.memberId, session.user.id)
         )
       );

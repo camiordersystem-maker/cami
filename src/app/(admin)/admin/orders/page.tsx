@@ -30,15 +30,16 @@ function getPeriodRange(period: string): { start?: Date; end?: Date } {
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: { status?: string; period?: string; sort?: string; company?: string };
+  searchParams: Promise<{ status?: string; period?: string; sort?: string; company?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const statusFilter = (searchParams.status as StatusFilter) ?? "all";
-  const period = searchParams.period ?? "all";
-  const sort = searchParams.sort ?? "date_desc";
-  const company = searchParams.company ?? "";
+  const resolvedSearchParams = await searchParams;
+  const statusFilter = (resolvedSearchParams.status as StatusFilter) ?? "all";
+  const period = resolvedSearchParams.period ?? "all";
+  const sort = resolvedSearchParams.sort ?? "date_desc";
+  const company = resolvedSearchParams.company ?? "";
 
   const { start, end } = getPeriodRange(period);
 

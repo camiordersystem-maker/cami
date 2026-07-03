@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
@@ -26,7 +26,7 @@ export async function GET(
         createdAt: schema.orders.createdAt, updatedAt: schema.orders.updatedAt,
       })
       .from(schema.orders)
-      .where(eq(schema.orders.id, params.id));
+      .where(eq(schema.orders.id, (await params).id));
 
     if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

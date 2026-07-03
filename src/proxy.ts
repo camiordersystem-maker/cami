@@ -22,7 +22,7 @@ function withSecurityHeaders(response: NextResponse) {
   return response
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // 公開パスはそのまま通す

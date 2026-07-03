@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,7 +19,7 @@ export async function POST(
       id: schema.orders.id, memberId: schema.orders.memberId, status: schema.orders.status,
     })
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, (await params).id));
 
   if (!order) return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
   if (order.memberId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

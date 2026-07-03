@@ -18,7 +18,7 @@ const updateSchema = z.object({
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
@@ -38,7 +38,7 @@ export async function GET(
         createdAt: schema.orders.createdAt, updatedAt: schema.orders.updatedAt,
       })
       .from(schema.orders)
-      .where(eq(schema.orders.id, params.id));
+      .where(eq(schema.orders.id, (await params).id));
 
     if (!order) return notFound();
 
@@ -76,7 +76,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -87,7 +87,7 @@ export async function PATCH(
     return validationError();
   }
 
-  const { id } = params;
+  const { id } = await params;
   const [order] = await db
     .select({ id: schema.orders.id, status: schema.orders.status, paymentStatus: schema.orders.paymentStatus, memberId: schema.orders.memberId, orderNo: schema.orders.orderNo })
     .from(schema.orders)

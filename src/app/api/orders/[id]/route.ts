@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,7 +14,7 @@ export async function GET(
   const [order] = await db
     .select()
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, (await params).id));
 
   if (!order) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -39,7 +39,7 @@ export async function GET(
 // 店舗側からの注文キャンセル（pending のみ）
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -50,7 +50,7 @@ export async function PATCH(
   const [order] = await db
     .select()
     .from(schema.orders)
-    .where(eq(schema.orders.id, params.id));
+    .where(eq(schema.orders.id, (await params).id));
 
   if (!order) return NextResponse.json({ error: "注文が見つかりません" }, { status: 404 });
   if (order.memberId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -19,7 +19,7 @@ const updateSchema = z.object({
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session || (session.user as { role: string }).role !== "admin") {
@@ -36,7 +36,7 @@ export async function GET(
         rankId: schema.members.rankId, createdAt: schema.members.createdAt, updatedAt: schema.members.updatedAt,
       })
       .from(schema.members)
-      .where(eq(schema.members.id, params.id));
+      .where(eq(schema.members.id, (await params).id));
 
     if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -46,13 +46,13 @@ export async function GET(
     const orders = await db
       .select({ id: schema.orders.id, orderNo: schema.orders.orderNo, status: schema.orders.status, total: schema.orders.total, createdAt: schema.orders.createdAt })
       .from(schema.orders)
-      .where(eq(schema.orders.memberId, params.id))
+      .where(eq(schema.orders.memberId, (await params).id))
       .orderBy(desc(schema.orders.createdAt));
 
     const addresses = await db
       .select({ id: schema.shippingAddresses.id, label: schema.shippingAddresses.label, prefecture: schema.shippingAddresses.prefecture, address1: schema.shippingAddresses.address1, isDefault: schema.shippingAddresses.isDefault })
       .from(schema.shippingAddresses)
-      .where(and(eq(schema.shippingAddresses.memberId, params.id), isNull(schema.shippingAddresses.deletedAt)));
+      .where(and(eq(schema.shippingAddresses.memberId, (await params).id), isNull(schema.shippingAddresses.deletedAt)));
 
     const memberData = Object.fromEntries(Object.entries(member).filter(([key]) => key !== "password"));
     return NextResponse.json({ ...memberData, rank: rank ?? null, orders, addresses });
@@ -64,7 +64,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -73,7 +73,7 @@ export async function PATCH(
   const parsed = updateSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  const [member] = await db.select().from(schema.members).where(eq(schema.members.id, params.id));
+  const [member] = await db.select().from(schema.members).where(eq(schema.members.id, (await params).id));
   if (!member) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const updates: Partial<typeof schema.members.$inferInsert> = { updatedAt: new Date() };
@@ -85,7 +85,7 @@ export async function PATCH(
   if (parsed.data.address !== undefined) updates.address = parsed.data.address;
   if (parsed.data.businessDescription !== undefined) updates.businessDescription = parsed.data.businessDescription;
 
-  await db.update(schema.members).set(updates).where(eq(schema.members.id, params.id));
+  await db.update(schema.members).set(updates).where(eq(schema.members.id, (await params).id));
 
   if (parsed.data.status === "approved" && member.status !== "approved") {
     try {
@@ -107,7 +107,7 @@ export async function PATCH(
     actorRole: "admin",
     action: "update_member",
     targetType: "member",
-    targetId: params.id,
+    targetId: (await params).id,
     beforeValue: JSON.stringify({ status: member.status, rankId: member.rankId }),
     afterValue: JSON.stringify(parsed.data),
   });

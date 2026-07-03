@@ -17,7 +17,7 @@ const updateSchema = z.object({
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   const authErr = requireEditor(session);
@@ -30,7 +30,7 @@ export async function PUT(
     await db
       .update(schema.products)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(schema.products.id, params.id));
+      .where(eq(schema.products.id, (await params).id));
 
     return NextResponse.json({ ok: true });
   } catch (e) {

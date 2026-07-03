@@ -26,7 +26,7 @@ Production DBへ接続しないでください。GitHubへpushしないでくだ
 作業ブランチは `codex/local-complete-and-handover` です。公開前の作業をこのブランチ上で確認します。
 
 ## 07. 必要なソフト
-Node.js、npm、Docker Desktopが必要です。今回の検証ではNode.js v25.9.0、npm 11.12.1、Docker 29.6.1、Docker Compose 5.2.0で動作確認しました。
+Node.js、npm、Docker Desktopが必要です。今回の検証ではNode.js v25.9.0、npm 11.12.1、Docker 29.6.1、Docker Compose 5.2.0、Next.js 16.2.10で動作確認しました。
 
 ## 08. ローカル環境の全体像
 アプリ本体はNext.jsです。データベースはDocker上のPostgreSQL、メール確認はMailpitを使います。ローカルでは本物のメール送信をせず、Mailpitの画面でメールを確認できます。
@@ -146,13 +146,13 @@ lintは警告ゼロです。未使用importやReact Hook依存関係の警告を
 `npm run db:verify`は通過しました。スキーマ上の必須構造を確認しています。
 
 ## 31. preflight結果
-`npm run preflight`はビルド込みで通過しました。Next.jsのproduction buildも成功しています。
+`npm run preflight`はNext.js 16.2.10のwebpackビルド込みで通過しました。production buildも成功しています。
 
 ## 32. 秘密情報スキャン
 `npm run scan:secrets`は通過しました。ローカル用のダミー値は許可し、本物らしいAPIキーやトークンを検出する形に調整済みです。
 
 ## 32-A. npm auditの注意
-`npm audit --audit-level=moderate`では6件（moderate 5件、critical 1件）の既知脆弱性が報告されています。主な対象はNext.js、PostCSS、drizzle-kit経由のesbuildです。自動修正は`--force`が必要で、Next.js 16系など破壊的変更を含むため今回は実行していません。本番公開前には依存関係アップグレード計画を立て、ビルド・認証・画面・E2Eを再検証してください。
+`npm audit --audit-level=moderate`は0件です。Next.jsを16.2.10へ更新し、PostCSSとdrizzle-kit経由のesbuildはnpm overridesで安全版へ固定しました。更新に伴い、Next 16形式のparams/searchParams、proxy、webpackビルド明示、outputFileTracingRootも対応済みです。
 
 ## 33. ローカルDB接続の変更
 `src/lib/db/index.ts`は、PostgreSQL URLがlocalhost/127.0.0.1/::1の場合は通常の`pg`接続を使います。本番や共有環境のNeon接続は従来通りNeon serverless接続を使います。

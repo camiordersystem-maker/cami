@@ -18,9 +18,9 @@
 | 型チェック | `npm run typecheck` | 済 | 成功 | 型では表現できない業務ルール |
 | 単体テスト | `npm test` | 一部 | 成功 | E2E不足を手動確認で補完 |
 | DBスキーマ検証 | `npm run db:verify` | 済 | 成功 | migrationレビュー |
-| preflight | `npm run preflight` | 済 | 成功、build成功 | 外部サービス設定 |
+| preflight | `npm run preflight` | 済 | 成功、Next 16 build成功 | 外部サービス設定 |
 | 秘密情報スキャン | `npm run scan:secrets` | 済 | 成功 | 本番環境変数の目視確認 |
-| npm audit | `npm audit --audit-level=moderate` | 済 | 6件検出（critical 1、moderate 5） | 本番前に依存関係更新と再検証が必須 |
+| npm audit | `npm audit --audit-level=moderate` | 済 | 0件 | 依存更新時は再実行 |
 | 注文フロー | 画面操作 | 未 | 自動E2E未整備 | 必須 |
 | キャンセルフロー | 画面操作 | 未 | 自動E2E未整備 | 必須 |
 | 請求書表示 | 画面/印刷 | 未 | 自動视觉検査なし | 必須 |

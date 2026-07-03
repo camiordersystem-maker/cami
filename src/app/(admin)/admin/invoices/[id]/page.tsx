@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL } from "@/lib/utils";
 
 type SystemSettings = {
@@ -51,29 +52,42 @@ type InvoiceDetail = {
   orders: Order[];
 };
 
-export default function AdminInvoiceDetailPage({ params }: { params: { id: string } }) {
+export default function AdminInvoiceDetailPage() {
+  const { id } = useParams() as { id: string };
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  const load = useCallback(async () => {
+  async function load() {
     const [invoiceRes, settingsRes] = await Promise.all([
-      fetch(`/api/admin/invoices/${params.id}`),
+      fetch(`/api/admin/invoices/${id}`),
       fetch("/api/admin/settings"),
     ]);
     if (invoiceRes.ok) setInvoice(await invoiceRes.json());
     if (settingsRes.ok) setSettings(await settingsRes.json());
     setLoading(false);
-  }, [params.id]);
+  }
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    async function loadInitial() {
+      const [invoiceRes, settingsRes] = await Promise.all([
+        fetch(`/api/admin/invoices/${id}`),
+        fetch("/api/admin/settings"),
+      ]);
+      if (invoiceRes.ok) setInvoice(await invoiceRes.json());
+      if (settingsRes.ok) setSettings(await settingsRes.json());
+      setLoading(false);
+    }
+
+    void loadInitial();
+  }, [id]);
 
   async function updatePaymentStatus(status: string) {
     setUpdating(true);
     setMessage(null);
-    const res = await fetch(`/api/admin/invoices/${params.id}`, {
+    const res = await fetch(`/api/admin/invoices/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ paymentStatus: status }),

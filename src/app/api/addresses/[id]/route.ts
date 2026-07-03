@@ -12,7 +12,7 @@ const updateSchema = z.object({
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,7 +25,7 @@ export async function PUT(
     .from(schema.shippingAddresses)
     .where(
       and(
-        eq(schema.shippingAddresses.id, params.id),
+        eq(schema.shippingAddresses.id, (await params).id),
         eq(schema.shippingAddresses.memberId, session.user.id)
       )
     );
@@ -42,14 +42,14 @@ export async function PUT(
   await db
     .update(schema.shippingAddresses)
     .set(parsed.data)
-    .where(eq(schema.shippingAddresses.id, params.id));
+    .where(eq(schema.shippingAddresses.id, (await params).id));
 
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -59,7 +59,7 @@ export async function DELETE(
     .set({ deletedAt: new Date() })
     .where(
       and(
-        eq(schema.shippingAddresses.id, params.id),
+        eq(schema.shippingAddresses.id, (await params).id),
         eq(schema.shippingAddresses.memberId, session.user.id)
       )
     );
