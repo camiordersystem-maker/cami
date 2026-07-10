@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { requireEditor } from "@/lib/admin-auth";
 
 export async function POST(
@@ -30,15 +30,36 @@ export async function POST(
   const restoreStatus = (order.cancelBeforeStatus as string) ?? "confirmed";
 
   try {
-    await db
+    // Optimistic lock: only restore if still cancel_requested, so a
+    // concurrent approve (which returns stock) can't be overwritten.
+    const updated = await db
       .update(schema.orders)
       .set({
         status: restoreStatus,
         cancelBeforeStatus: null,
         cancelReason: null,
         updatedAt: new Date(),
+        lastStatusChangedAt: new Date(),
+        lastStatusChangedBy: session!.user.id,
       })
-      .where(eq(schema.orders.id, order.id));
+      .where(and(eq(schema.orders.id, order.id), eq(schema.orders.status, "cancel_requested")))
+      .returning({ id: schema.orders.id });
+
+    if (updated.length === 0) {
+      return NextResponse.json(
+        { error: "注文状態が他の操作で変更されました。再読み込みしてください。" },
+        { status: 409 }
+      );
+    }
+
+    await db.insert(schema.orderStatusHistories).values({
+      orderId: order.id,
+      fromStatus: "cancel_requested",
+      toStatus: restoreStatus,
+      reason: "キャンセル却下",
+      actorId: session!.user.id,
+      actorRole: "admin",
+    });
 
     await db.insert(schema.auditLogs).values({
       actorId: session!.user.id,

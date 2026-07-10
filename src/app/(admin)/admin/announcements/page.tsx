@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatDate } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Announcement = {
   id: string;
@@ -65,7 +66,7 @@ export default function AdminAnnouncementsPage() {
       setForm({ title: "", body: "", type: "all", targetMemberId: "", expiresAt: "" });
       load();
     } else {
-      setMessage({ text: (data as { error?: string }).error ?? "作成に失敗しました", ok: false });
+      setMessage({ text: apiErrorMessage(data, "作成に失敗しました"), ok: false });
     }
   }
 

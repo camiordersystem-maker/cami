@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Settings = {
   id: string;
@@ -70,7 +71,7 @@ export default function AdminSettingsPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: (d as { error?: string }).error ?? "保存に失敗しました", ok: false });
+      setMessage({ text: apiErrorMessage(d, "保存に失敗しました"), ok: false });
     }
   }
 

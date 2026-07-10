@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Admin = {
   id: string;
@@ -88,7 +89,7 @@ export default function AdminAdministratorsPage() {
         setEditing(null);
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
       }
     } catch {
       setSaving(false);
@@ -110,7 +111,7 @@ export default function AdminAdministratorsPage() {
         setMessage({ text: `${admin.name} を${action}しました`, ok: true });
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
       }
     } catch {
       setMessage({ text: "ネットワークエラーが発生しました", ok: false });

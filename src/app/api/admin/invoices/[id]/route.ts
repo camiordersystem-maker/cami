@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq, and, gte, lt } from "drizzle-orm";
+import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
 
 export async function GET(
@@ -74,27 +75,35 @@ export async function PATCH(
   const authErr = requireEditor(session);
   if (authErr) return authErr;
 
-  const body = await req.json().catch(() => ({})) as {
-    paymentStatus?: string;
-    note?: string;
-  };
+  const body = await req.json().catch(() => ({}));
+  const parsed = z
+    .object({
+      paymentStatus: z.enum(["unpaid", "paid", "overdue"]).optional(),
+      note: z.string().max(500).optional(),
+    })
+    .safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "入力内容を確認してください" }, { status: 400 });
+  }
 
   try {
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (body.paymentStatus) updates.paymentStatus = body.paymentStatus;
-    if (body.note !== undefined) updates.note = body.note;
+    if (parsed.data.paymentStatus) updates.paymentStatus = parsed.data.paymentStatus;
+    if (parsed.data.note !== undefined) updates.note = parsed.data.note;
 
     const [invoice] = await db
       .select({ id: schema.monthlyInvoices.id, memberId: schema.monthlyInvoices.memberId, invoiceNo: schema.monthlyInvoices.invoiceNo, paymentStatus: schema.monthlyInvoices.paymentStatus })
       .from(schema.monthlyInvoices)
       .where(eq(schema.monthlyInvoices.id, (await params).id));
 
+    if (!invoice) return NextResponse.json({ error: "請求書が見つかりません" }, { status: 404 });
+
     await db
       .update(schema.monthlyInvoices)
       .set(updates as Partial<typeof schema.monthlyInvoices.$inferInsert>)
       .where(eq(schema.monthlyInvoices.id, (await params).id));
 
-    if (body.paymentStatus && invoice && invoice.paymentStatus !== "paid" && body.paymentStatus === "paid") {
+    if (invoice.paymentStatus !== "paid" && parsed.data.paymentStatus === "paid") {
       await db.insert(schema.notifications).values({
         memberId: invoice.memberId,
         type: "invoice_issued",

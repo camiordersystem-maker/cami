@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { apiErrorMessage } from "@/lib/client-api";
 
 export default function AccountPage() {
   const { data: session } = useSession();
@@ -36,7 +37,7 @@ export default function AccountPage() {
         setMessage({ text: "パスワードを変更しました", ok: true });
         setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
       }
     } catch {
       setSaving(false);

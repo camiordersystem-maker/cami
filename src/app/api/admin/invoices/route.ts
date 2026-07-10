@@ -98,7 +98,18 @@ export async function POST(req: NextRequest) {
       month === 12 ? 1 : month + 1
     );
 
-    const invoiceNo = generateInvoiceNo(year, month);
+    // invoiceNo has a unique constraint; retry generation if the random
+    // suffix collides with an existing invoice in the same month.
+    let invoiceNo = generateInvoiceNo(year, month);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const [dup] = await db
+        .select({ id: schema.monthlyInvoices.id })
+        .from(schema.monthlyInvoices)
+        .where(eq(schema.monthlyInvoices.invoiceNo, invoiceNo))
+        .limit(1);
+      if (!dup) break;
+      invoiceNo = generateInvoiceNo(year, month);
+    }
 
     const [invoice] = await db
       .insert(schema.monthlyInvoices)

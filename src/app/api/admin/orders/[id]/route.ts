@@ -180,12 +180,14 @@ export async function PATCH(
           const message = parsed.data.status === "confirmed"
             ? `注文が確認されました（${order.orderNo}）`
             : `ご注文の商品を発送しました（${order.orderNo}）`;
+          // Do not swallow errors here: inside a PostgreSQL transaction a
+          // failed statement aborts the whole transaction anyway.
           await tx.insert(schema.notifications).values({
             memberId: order.memberId,
             type: notifyType,
             message,
             orderId: id,
-          }).catch(() => {});
+          });
         }
       }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type SystemSettings = {
   companyName: string;
@@ -98,7 +99,7 @@ export default function AdminInvoiceDetailPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: (d as { error?: string }).error ?? "エラーが発生しました", ok: false });
+      setMessage({ text: apiErrorMessage(d, "エラーが発生しました"), ok: false });
     }
   }
 

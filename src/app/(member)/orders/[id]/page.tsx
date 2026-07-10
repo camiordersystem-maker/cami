@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type OrderDetail = {
   id: string;
@@ -85,7 +86,7 @@ export default function MemberOrderDetailPage() {
         setShowCancelForm(false);
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "申込に失敗しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "申込に失敗しました"), ok: false });
       }
     } catch {
       setCancelling(false);

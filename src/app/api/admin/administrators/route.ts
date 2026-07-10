@@ -101,6 +101,9 @@ export async function PUT(req: NextRequest) {
   if (id === session!.user.id && rest.isActive === false) {
     return NextResponse.json({ error: "自分自身を無効化することはできません" }, { status: 400 });
   }
+  if (id === session!.user.id && rest.role && rest.role !== "superadmin") {
+    return NextResponse.json({ error: "自分自身のロールを変更することはできません" }, { status: 400 });
+  }
 
   try {
     const updates: Record<string, unknown> = { ...rest, updatedAt: new Date() };

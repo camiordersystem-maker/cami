@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 export async function POST(
   req: NextRequest,
@@ -34,15 +34,41 @@ export async function POST(
   const body = await req.json().catch(() => ({})) as { cancelReason?: string };
 
   try {
-    await db
+    // Optimistic lock: only transition if the status is still cancellable,
+    // so a concurrent admin action (e.g. ship) can't be overwritten.
+    const updated = await db
       .update(schema.orders)
       .set({
         status: "cancel_requested",
         cancelReason: body.cancelReason ?? null,
         cancelBeforeStatus: order.status,
         updatedAt: new Date(),
+        lastStatusChangedAt: new Date(),
+        lastStatusChangedBy: session.user.id,
       })
-      .where(eq(schema.orders.id, order.id));
+      .where(
+        and(
+          eq(schema.orders.id, order.id),
+          inArray(schema.orders.status, ["pending", "confirmed"])
+        )
+      )
+      .returning({ id: schema.orders.id });
+
+    if (updated.length === 0) {
+      return NextResponse.json(
+        { error: "注文状態が変更されたため申込できません。再読み込みしてください。" },
+        { status: 409 }
+      );
+    }
+
+    await db.insert(schema.orderStatusHistories).values({
+      orderId: order.id,
+      fromStatus: order.status,
+      toStatus: "cancel_requested",
+      reason: body.cancelReason ?? null,
+      actorId: session.user.id,
+      actorRole: "member",
+    });
 
     await db.insert(schema.auditLogs).values({
       actorId: session.user.id,

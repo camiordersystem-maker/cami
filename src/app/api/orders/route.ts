@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc, and, gte } from "drizzle-orm";
+import { eq, desc, and, gte, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { generateOrderNo, TAX_RATE } from "@/lib/utils";
 import { sendOrderConfirmation } from "@/lib/email";
@@ -74,6 +74,18 @@ export async function POST(req: NextRequest) {
 
     if (!rank) return internalError("ランク情報が見つかりません");
 
+    const [shippingAddress] = await db
+      .select({ id: schema.shippingAddresses.id })
+      .from(schema.shippingAddresses)
+      .where(
+        and(
+          eq(schema.shippingAddresses.id, shippingAddressId),
+          eq(schema.shippingAddresses.memberId, memberId),
+          isNull(schema.shippingAddresses.deletedAt)
+        )
+      );
+    if (!shippingAddress) return validationError("配送先が正しくありません");
+
     const rate = typeof rank.rate === "string" ? parseFloat(rank.rate) : rank.rate;
 
     const [publishedTerms] = await db
@@ -128,7 +140,19 @@ export async function POST(req: NextRequest) {
     const taxAmount = Math.round(subtotal * TAX_RATE);
     const total = subtotal + taxAmount;
 
-    const orderNo = generateOrderNo();
+    // orderNo has a unique constraint; retry generation if the random
+    // suffix collides with an existing order on the same day.
+    let orderNo = generateOrderNo();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const [dup] = await db
+        .select({ id: schema.orders.id })
+        .from(schema.orders)
+        .where(eq(schema.orders.orderNo, orderNo))
+        .limit(1);
+      if (!dup) break;
+      orderNo = generateOrderNo();
+    }
+
     const run = isPostgresRuntime()
       ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(fn)
       : <T>(fn: (tx: typeof db) => Promise<T>) => fn(db);

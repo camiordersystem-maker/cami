@@ -7,6 +7,15 @@ const isStaging = process.env.VERCEL_ENV === "preview" || process.env.APP_ENV ==
 const stagingEmailMode = process.env.STAGING_EMAIL_MODE ?? "suppress";
 const stagingTestRecipient = process.env.STAGING_EMAIL_TO;
 
+// User-supplied values (company names etc.) must not inject HTML into emails.
+function esc(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 async function send(to: string, subject: string, html: string) {
   if (isDev) {
     console.log("\n[DEV EMAIL]", { to, subject });
@@ -39,7 +48,7 @@ export async function sendOrderConfirmation(params: {
   await send(
     to,
     `【Cami】ご注文を承りました（${orderNo}）`,
-    `<p>${companyName} 御中</p>
+    `<p>${esc(companyName)} 御中</p>
      <p>ご注文ありがとうございます。<br>
      注文番号：<strong>${orderNo}</strong><br>
      合計金額：<strong>${formatted}</strong></p>
@@ -56,7 +65,7 @@ export async function sendMemberApproved(params: {
   await send(
     to,
     "【Cami】会員登録が承認されました",
-    `<p>${companyName} 御中</p>
+    `<p>${esc(companyName)} 御中</p>
      <p>会員登録が承認されました。ログインしてご注文いただけます。</p>
      <p>Cami 本部</p>`
   );
@@ -70,7 +79,7 @@ export async function sendMemberRejected(params: {
   await send(
     to,
     "【Cami】会員登録について",
-    `<p>${companyName} 御中</p>
+    `<p>${esc(companyName)} 御中</p>
      <p>ご登録いただきありがとうございます。<br>
      誠に申し訳ございませんが、今回は審査の結果、ご登録をお断りさせていただく運びとなりました。<br>
      詳細につきましてはお問い合わせください。</p>
@@ -89,7 +98,7 @@ export async function sendNewMemberNotification(params: {
     adminEmail,
     `【Cami管理】新規会員登録申請：${companyName}`,
     `<p>新規会員登録申請が届きました。</p>
-     <p>会社名：${companyName}<br>担当者：${contactName}<br>メール：${email}</p>
+     <p>会社名：${esc(companyName)}<br>担当者：${esc(contactName)}<br>メール：${esc(email)}</p>
      <p>管理画面から審査してください。</p>`
   );
 }
@@ -105,7 +114,7 @@ export async function sendLowStockAlert(params: {
     adminEmail,
     `【Cami】在庫残少アラート：${productName}`,
     `<p>在庫が少なくなっています。</p>
-     <p>商品名：<strong>${productName}</strong><br>
+     <p>商品名：<strong>${esc(productName)}</strong><br>
      現在在庫：<strong>${availableBoxes}箱</strong>（アラート閾値：${threshold}箱）</p>
      <p>管理画面から在庫を補充してください。</p>
      <p>Cami 管理システム</p>`

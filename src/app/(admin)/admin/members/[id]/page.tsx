@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Member = {
   id: string;
@@ -99,7 +100,7 @@ export default function AdminMemberDetailPage() {
         setMessage({ text: successMsg, ok: true });
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "更新に失敗しました"), ok: false });
       }
     } catch {
       setUpdating(false);
@@ -142,7 +143,7 @@ export default function AdminMemberDetailPage() {
         setEditingInfo(false);
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "更新に失敗しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "更新に失敗しました"), ok: false });
       }
     } catch {
       setSavingInfo(false);

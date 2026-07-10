@@ -92,7 +92,7 @@ export const PAYMENT_STATUS_COLOR: Record<string, string> = {
   overdue: "bg-red-100 text-red-800",
 };
 
-export const TAX_RATE = 0.10;
+export { TAX_RATE } from "./constants";
 
 export function generateInvoiceNo(year: number, month: number): string {
   const rand = Math.floor(100 + Math.random() * 900);

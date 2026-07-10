@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
+import { apiErrorMessage } from "@/lib/client-api";
 
 type Invoice = {
   id: string;
@@ -61,7 +62,7 @@ export default function AdminInvoicesPage() {
         setMessage({ text: "請求書を発行しました", ok: true });
         load();
       } else {
-        setMessage({ text: (data as { error?: string }).error ?? "エラーが発生しました", ok: false });
+        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
       }
     } catch {
       setGenerating(false);
