@@ -37,6 +37,7 @@ export const {
   invoices,
   invoiceItems,
   payments,
+  featureFlags,
   memberRanksRelations,
   membersRelations,
   shippingAddressesRelations,
@@ -96,3 +97,5 @@ export type OrderStatusHistory = typeof orderStatusHistories.$inferSelect;
 export type NewOrderStatusHistory = typeof orderStatusHistories.$inferInsert;
 export type MemberTermsConsent = typeof memberTermsConsents.$inferSelect;
 export type NewMemberTermsConsent = typeof memberTermsConsents.$inferInsert;
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type NewFeatureFlag = typeof featureFlags.$inferInsert;

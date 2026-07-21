@@ -415,12 +415,21 @@ export const payments = sqliteTable(
   (t) => [index("payments_invoice_idx").on(t.invoiceId)]
 );
 
+// ─── feature_flags ────────────────────────────────────────────────────────────
+
+export const featureFlags = sqliteTable("feature_flags", {
+  key: text("key").primaryKey(),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedBy: text("updated_by"),
+});
+
 // ─── notifications ────────────────────────────────────────────────────────────
 
 export const notifications = sqliteTable("notifications", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   memberId: text("member_id").notNull().references(() => members.id),
-  type: text("type", { enum: ["invoice_issued", "order_confirmed", "order_shipped"] }).notNull(),
+  type: text("type", { enum: ["invoice_issued", "order_confirmed", "order_shipped", "payment_overdue"] }).notNull(),
   message: text("message").notNull(),
   orderId: text("order_id").references(() => orders.id),
   isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),

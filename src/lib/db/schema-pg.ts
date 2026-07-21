@@ -401,6 +401,15 @@ export const payments = pgTable(
   (t) => [index("payments_invoice_idx").on(t.invoiceId)]
 );
 
+// ─── feature_flags ────────────────────────────────────────────────────────────
+
+export const featureFlags = pgTable("feature_flags", {
+  key: text("key").primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  updatedBy: text("updated_by"),
+});
+
 // ─── notifications ────────────────────────────────────────────────────────────
 
 export const notifications = pgTable("notifications", {

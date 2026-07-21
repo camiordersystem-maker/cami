@@ -5,6 +5,9 @@ import * as schema from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { FEATURE_FLAGS } from "@/lib/constants";
+import { sendAnnouncementEmail } from "@/lib/email";
 
 const createSchema = z.object({
   title: z.string().min(1).max(100),
@@ -69,6 +72,28 @@ export async function POST(req: NextRequest) {
       createdBy: session!.user.id,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
     });
+
+    const emailEnabled = await isFeatureEnabled(FEATURE_FLAGS.ANNOUNCEMENT_EMAIL).catch(() => false);
+    if (emailEnabled) {
+      const recipients = type === "individual" && targetMemberId
+        ? await db
+            .select({ email: schema.members.email, companyName: schema.members.companyName })
+            .from(schema.members)
+            .where(eq(schema.members.id, targetMemberId))
+        : await db
+            .select({ email: schema.members.email, companyName: schema.members.companyName })
+            .from(schema.members)
+            .where(eq(schema.members.status, "approved"));
+
+      await Promise.all(
+        recipients.map((r: { email: string; companyName: string }) =>
+          sendAnnouncementEmail({ to: r.email, companyName: r.companyName, title, body: content }).catch((e) =>
+            console.error("sendAnnouncementEmail failed:", e)
+          )
+        )
+      );
+    }
+
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (e) {
     console.error("announcements POST error:", e);

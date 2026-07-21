@@ -22,6 +22,7 @@ const EXTRA_MIGRATIONS = [
   "0005_system_settings.sql",
   "0006_new_features.sql",
   "0007_phase2_integrity.sql",
+  "0008_feature_flags.sql",
 ];
 
 async function runExtraMigrations() {

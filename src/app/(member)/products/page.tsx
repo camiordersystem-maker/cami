@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { apiData, apiErrorMessage } from "@/lib/client-api";
+import { FEATURE_FLAGS } from "@/lib/constants";
 
 type Product = {
   id: string;
@@ -33,6 +34,7 @@ type CartItem = { productId: string; name: string; boxes: number; unitPrice: num
 export default function ProductsPage() {
   useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -44,25 +46,108 @@ export default function ProductsPage() {
   const [error, setError] = useState("");
   const [step, setStep] = useState<"catalog" | "confirm">("catalog");
   const [loading, setLoading] = useState(true);
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const [notice, setNotice] = useState("");
+  const [csvError, setCsvError] = useState("");
 
   useEffect(() => {
     Promise.all([
       fetch("/api/products").then((r) => r.json()),
       fetch("/api/addresses").then((r) => r.json()),
-    ]).then(([prods, addrs]) => {
+      fetch("/api/feature-flags").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]).then(async ([prods, addrs, flagsJson]) => {
       setProducts(prods);
       setAddresses(addrs);
       const def = addrs.find((a: Address) => a.isDefault);
       if (def) setSelectedAddress(def.id);
+
+      const flagMap = flagsJson ? apiData<Record<string, boolean>>(flagsJson) : {};
+      setFlags(flagMap);
+
+      const reorderId = searchParams.get("reorder");
+      if (reorderId && flagMap[FEATURE_FLAGS.QUICK_REORDER]) {
+        try {
+          const res = await fetch(`/api/orders/${reorderId}`);
+          if (res.ok) {
+            const order = await res.json();
+            const nextQuantities: Record<string, number> = {};
+            const skipped: string[] = [];
+            for (const item of order.items as { productId: string; productName: string; boxes: number }[]) {
+              const product = (prods as Product[]).find((p) => p.id === item.productId);
+              if (product && product.isActive) {
+                nextQuantities[item.productId] = item.boxes;
+              } else {
+                skipped.push(item.productName);
+              }
+            }
+            setQuantities(nextQuantities);
+            setNotice(
+              skipped.length > 0
+                ? `過去の注文（${order.orderNo}）の内容を読み込みました。「${skipped.join("、")}」は現在ご注文いただけないため除外しています。`
+                : `過去の注文（${order.orderNo}）と同じ内容を読み込みました。内容をご確認のうえご注文ください。`
+            );
+          }
+        } catch {
+          // 再注文の読み込みに失敗しても通常の商品選択は継続できるようにする
+        }
+      }
+
       setLoading(false);
     }).catch(() => {
       setLoading(false);
       setError("データの読み込みに失敗しました。ページを再読み込みしてください。");
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateQty(productId: string, val: number) {
     setQuantities((prev) => ({ ...prev, [productId]: Math.max(0, val) }));
+  }
+
+  function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCsvError("");
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const lines = text.split(/\r\n|\n|\r/).map((l) => l.trim()).filter(Boolean);
+      if (lines.length === 0) { setCsvError("CSVが空です"); return; }
+
+      // ヘッダー行（商品名,箱数）はあってもなくても許容する
+      const startIdx = /^商品名/.test(lines[0]) ? 1 : 0;
+      const errors: string[] = [];
+      const next: Record<string, number> = { ...quantities };
+      let appliedCount = 0;
+
+      for (let i = startIdx; i < lines.length; i++) {
+        const cols = lines[i].split(",").map((c) => c.trim());
+        if (cols.length < 2) { errors.push(`${i + 1}行目: 列数が不足しています`); continue; }
+        const [name, boxesStr] = cols;
+        const boxes = parseInt(boxesStr, 10);
+        if (!name) { errors.push(`${i + 1}行目: 商品名が空です`); continue; }
+        if (!Number.isFinite(boxes) || boxes < 0) { errors.push(`${i + 1}行目: 箱数が不正です（${boxesStr}）`); continue; }
+
+        const product = products.find((p) => p.name === name);
+        if (!product) { errors.push(`${i + 1}行目: 商品「${name}」が見つかりません`); continue; }
+        if (!product.isActive) { errors.push(`${i + 1}行目: 商品「${name}」は現在販売しておりません`); continue; }
+        if (boxes > product.availableBoxes) {
+          errors.push(`${i + 1}行目: 「${name}」は在庫不足です（在庫${product.availableBoxes}箱、指定${boxes}箱）`);
+          continue;
+        }
+
+        next[product.id] = boxes;
+        appliedCount += 1;
+      }
+
+      setQuantities(next);
+      setCsvError(errors.length > 0 ? errors.join(" / ") : "");
+      setNotice(appliedCount > 0 ? `CSVから${appliedCount}件の商品数量を反映しました。内容をご確認ください。` : "");
+    };
+    reader.onerror = () => setCsvError("ファイルの読み込みに失敗しました");
+    reader.readAsText(file, "utf-8");
   }
 
   function buildCart(): CartItem[] {
@@ -260,6 +345,34 @@ export default function ProductsPage() {
         <p className="text-slate-500 text-sm mt-1">ご希望の数量をご入力ください</p>
       </div>
 
+      {notice && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+          {notice}
+        </div>
+      )}
+
+      {flags[FEATURE_FLAGS.CSV_BULK_ORDER] && (
+        <div className="mb-6 bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="font-semibold text-slate-900 text-sm">CSV一括発注</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                「商品名,箱数」の形式のCSVをアップロードすると数量に反映されます（ヘッダー行の有無は問いません）
+              </p>
+            </div>
+            <label className="shrink-0 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg cursor-pointer transition-colors">
+              CSVを選択
+              <input type="file" accept=".csv,text/csv" onChange={handleCsvUpload} className="hidden" />
+            </label>
+          </div>
+          {csvError && (
+            <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+              {csvError}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Products */}
         <div className="lg:col-span-2 space-y-4">
@@ -304,6 +417,9 @@ export default function ProductsPage() {
                           : "bg-red-50 text-red-700"
                       }`}>
                         在庫: {p.availableBoxes} 箱
+                        {flags[FEATURE_FLAGS.LOW_STOCK_BADGE] && p.availableBoxes > 0 && p.availableBoxes <= 10 && (
+                          <span className="ml-1 font-semibold">（残りわずか）</span>
+                        )}
                       </div>
                     </div>
                   </div>

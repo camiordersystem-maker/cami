@@ -22,6 +22,13 @@
       "when": 1782300000000,
       "tag": "0002_phase2_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784620800000,
+      "tag": "0003_feature_flags",
+      "breakpoints": true
     }
   ]
 }

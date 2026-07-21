@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { requireEditor } from "@/lib/admin-auth";
@@ -17,6 +17,31 @@ const createSchema = z.object({
   businessDescription: z.string().optional(),
   rankId: z.string().min(1, "ランクを選択してください"),
 });
+
+export async function GET() {
+  const session = await auth();
+  if (!session || (session.user as { role: string }).role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const members = await db
+      .select({
+        id: schema.members.id,
+        companyName: schema.members.companyName,
+        contactName: schema.members.contactName,
+        email: schema.members.email,
+        status: schema.members.status,
+        createdAt: schema.members.createdAt,
+      })
+      .from(schema.members)
+      .orderBy(desc(schema.members.createdAt));
+    return NextResponse.json(members);
+  } catch (e) {
+    console.error("admin members GET error:", e);
+    return NextResponse.json({ error: "取得に失敗しました" }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();

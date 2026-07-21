@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
-import { apiErrorMessage } from "@/lib/client-api";
+import { apiData, apiErrorMessage } from "@/lib/client-api";
+import { FEATURE_FLAGS } from "@/lib/constants";
 
 type OrderDetail = {
   id: string;
@@ -57,6 +58,16 @@ export default function MemberOrderDetailPage() {
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [quickReorderEnabled, setQuickReorderEnabled] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/feature-flags")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json) setQuickReorderEnabled(Boolean(apiData<Record<string, boolean>>(json)[FEATURE_FLAGS.QUICK_REORDER]));
+      })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/orders/${id}`);
@@ -147,6 +158,11 @@ export default function MemberOrderDetailPage() {
           {(order.status === "confirmed" || order.status === "shipped" || order.status === "delivered") && (
             <Link href={`/orders/${order.id}/invoice`} className="text-sm text-blue-600 hover:underline font-medium">
               請求書を見る
+            </Link>
+          )}
+          {quickReorderEnabled && (
+            <Link href={`/products?reorder=${order.id}`} className="text-sm text-green-600 hover:underline font-medium">
+              再注文する
             </Link>
           )}
           {canRequestCancel && !isCancelRequested && (

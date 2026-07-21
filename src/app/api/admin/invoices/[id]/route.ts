@@ -5,6 +5,9 @@ import * as schema from "@/lib/db/schema";
 import { eq, and, gte, lt } from "drizzle-orm";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { FEATURE_FLAGS, NOTIFICATION_TYPES } from "@/lib/constants";
+import { sendPaymentOverdueAlert } from "@/lib/email";
 
 export async function GET(
   _req: NextRequest,
@@ -92,7 +95,7 @@ export async function PATCH(
     if (parsed.data.note !== undefined) updates.note = parsed.data.note;
 
     const [invoice] = await db
-      .select({ id: schema.monthlyInvoices.id, memberId: schema.monthlyInvoices.memberId, invoiceNo: schema.monthlyInvoices.invoiceNo, paymentStatus: schema.monthlyInvoices.paymentStatus })
+      .select({ id: schema.monthlyInvoices.id, memberId: schema.monthlyInvoices.memberId, invoiceNo: schema.monthlyInvoices.invoiceNo, paymentStatus: schema.monthlyInvoices.paymentStatus, total: schema.monthlyInvoices.total })
       .from(schema.monthlyInvoices)
       .where(eq(schema.monthlyInvoices.id, (await params).id));
 
@@ -109,6 +112,30 @@ export async function PATCH(
         type: "invoice_issued",
         message: `請求書が発行されました（${invoice.invoiceNo}）`,
       }).catch(() => {});
+    }
+
+    if (invoice.paymentStatus !== "overdue" && parsed.data.paymentStatus === "overdue") {
+      const overdueAlertsEnabled = await isFeatureEnabled(FEATURE_FLAGS.PAYMENT_OVERDUE_ALERTS).catch(() => false);
+      if (overdueAlertsEnabled) {
+        await db.insert(schema.notifications).values({
+          memberId: invoice.memberId,
+          type: NOTIFICATION_TYPES.PAYMENT_OVERDUE,
+          message: `請求書のお支払い期限が過ぎています（${invoice.invoiceNo}）`,
+        }).catch(() => {});
+
+        const [member] = await db
+          .select({ email: schema.members.email, companyName: schema.members.companyName })
+          .from(schema.members)
+          .where(eq(schema.members.id, invoice.memberId));
+        if (member) {
+          await sendPaymentOverdueAlert({
+            to: member.email,
+            companyName: member.companyName,
+            invoiceNo: invoice.invoiceNo,
+            total: invoice.total,
+          }).catch((e) => console.error("sendPaymentOverdueAlert failed:", e));
+        }
+      }
     }
 
     return NextResponse.json({ ok: true });

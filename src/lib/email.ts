@@ -120,3 +120,61 @@ export async function sendLowStockAlert(params: {
      <p>Cami 管理システム</p>`
   );
 }
+
+export async function sendPaymentOverdueAlert(params: {
+  to: string;
+  companyName: string;
+  invoiceNo: string;
+  total: number;
+}) {
+  const { to, companyName, invoiceNo, total } = params;
+  const formatted = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(total);
+  await send(
+    to,
+    `【Cami】お支払い期限超過のお知らせ（${invoiceNo}）`,
+    `<p>${esc(companyName)} 御中</p>
+     <p>下記請求書のお支払い期限を過ぎております。ご確認のうえ、お早めのお手続きをお願いいたします。</p>
+     <p>請求書番号：<strong>${invoiceNo}</strong><br>
+     ご請求金額：<strong>${formatted}</strong></p>
+     <p>すでにお支払い済みの場合は、行き違いにてご容赦ください。</p>
+     <p>Cami 本部</p>`
+  );
+}
+
+export async function sendInvoiceEmail(params: {
+  to: string;
+  companyName: string;
+  invoiceNo: string;
+  total: number;
+  viewUrl: string;
+}) {
+  const { to, companyName, invoiceNo, total, viewUrl } = params;
+  const formatted = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(total);
+  await send(
+    to,
+    `【Cami】請求書を送付いたします（${invoiceNo}）`,
+    `<p>${esc(companyName)} 御中</p>
+     <p>請求書を送付いたします。下記リンクよりご確認・印刷（PDF保存）いただけます。</p>
+     <p>請求書番号：<strong>${invoiceNo}</strong><br>
+     ご請求金額：<strong>${formatted}</strong></p>
+     <p><a href="${esc(viewUrl)}">請求書を確認する</a></p>
+     <p>Cami 本部</p>`
+  );
+}
+
+export async function sendAnnouncementEmail(params: {
+  to: string;
+  companyName: string;
+  title: string;
+  body: string;
+}) {
+  const { to, companyName, title, body } = params;
+  await send(
+    to,
+    `【Cami】お知らせ：${title}`,
+    `<p>${esc(companyName)} 御中</p>
+     <p><strong>${esc(title)}</strong></p>
+     <p style="white-space: pre-wrap;">${esc(body)}</p>
+     <p>Cami 本部</p>`
+  );
+}

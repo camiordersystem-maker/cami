@@ -1,11 +1,12 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, count, sum, desc, gte, and, lte } from "drizzle-orm";
+import { eq, count, sum, desc, gte, and, lte, lt, ne } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_COLOR, MEMBER_STATUS_LABEL, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
-import { INVENTORY_WARNING_THRESHOLD } from "@/lib/constants";
+import { INVENTORY_WARNING_THRESHOLD, FEATURE_FLAGS } from "@/lib/constants";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export const metadata = { title: "管理ダッシュボード" };
 
@@ -40,6 +41,27 @@ export default async function AdminDashboardPage() {
     .from(schema.monthlyInvoices)
     .where(eq(schema.monthlyInvoices.paymentStatus, "unpaid"))
     .catch(() => [null]);
+
+  const paymentOverdueAlertsEnabled = await isFeatureEnabled(FEATURE_FLAGS.PAYMENT_OVERDUE_ALERTS).catch(() => false);
+  const overdueInvoices = paymentOverdueAlertsEnabled
+    ? await db
+        .select({
+          id: schema.monthlyInvoices.id,
+          invoiceNo: schema.monthlyInvoices.invoiceNo,
+          total: schema.monthlyInvoices.total,
+          paymentDueDate: schema.monthlyInvoices.paymentDueDate,
+          companyName: schema.members.companyName,
+        })
+        .from(schema.monthlyInvoices)
+        .leftJoin(schema.members, eq(schema.monthlyInvoices.memberId, schema.members.id))
+        .where(
+          and(
+            ne(schema.monthlyInvoices.paymentStatus, "paid"),
+            lt(schema.monthlyInvoices.paymentDueDate, new Date())
+          )
+        )
+        .catch(() => [])
+    : [];
 
   // Monthly sales for last 6 months
   const sixMonthsAgo = getMonthStart(5);
@@ -146,6 +168,32 @@ export default async function AdminDashboardPage() {
           <Link href="/admin/invoices" className="text-sm text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
             請求書管理 →
           </Link>
+        </div>
+      )}
+
+      {/* Payment overdue alert (feature flag: payment_overdue_alerts) */}
+      {paymentOverdueAlertsEnabled && overdueInvoices.length > 0 && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold text-red-800 text-sm">⏰ 支払期限超過（{overdueInvoices.length}件）</div>
+            <Link href="/admin/invoices" className="text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+              請求書管理 →
+            </Link>
+          </div>
+          <div className="divide-y divide-red-100">
+            {overdueInvoices.map((inv: (typeof overdueInvoices)[0]) => (
+              <Link
+                key={inv.id}
+                href={`/admin/invoices/${inv.id}`}
+                className="py-2 flex items-center justify-between text-sm hover:bg-red-100/40 -mx-2 px-2 rounded transition-colors"
+              >
+                <span className="text-red-800 font-medium">{inv.companyName ?? "—"}（{inv.invoiceNo}）</span>
+                <span className="text-red-600 font-bold">
+                  期限 {inv.paymentDueDate ? formatDate(inv.paymentDueDate) : "—"} ／ {formatCurrency(inv.total)}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

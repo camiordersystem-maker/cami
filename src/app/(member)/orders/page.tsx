@@ -5,6 +5,8 @@ import { eq, desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatCurrency, formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR } from "@/lib/utils";
+import { FEATURE_FLAGS } from "@/lib/constants";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 export const metadata = { title: "注文履歴" };
 
@@ -18,11 +20,25 @@ export default async function MemberOrdersPage() {
     .where(eq(schema.orders.memberId, session.user.id))
     .orderBy(desc(schema.orders.createdAt));
 
+  const quickReorderEnabled = await isFeatureEnabled(FEATURE_FLAGS.QUICK_REORDER).catch(() => false);
+  const csvExportEnabled = await isFeatureEnabled(FEATURE_FLAGS.MEMBER_ORDER_CSV_EXPORT).catch(() => false);
+
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">注文履歴</h1>
-        <p className="text-slate-500 text-sm mt-1">これまでのご注文一覧です</p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">注文履歴</h1>
+          <p className="text-slate-500 text-sm mt-1">これまでのご注文一覧です</p>
+        </div>
+        {csvExportEnabled && orders.length > 0 && (
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- ファイルダウンロードのためLink不使用
+          <a
+            href="/api/orders/export"
+            className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
+          >
+            CSVダウンロード
+          </a>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200">
@@ -81,6 +97,14 @@ export default async function MemberOrdersPage() {
                         className="text-xs text-slate-500 hover:underline"
                       >
                         請求書
+                      </Link>
+                    )}
+                    {quickReorderEnabled && (
+                      <Link
+                        href={`/products?reorder=${order.id}`}
+                        className="text-xs text-green-600 hover:underline"
+                      >
+                        再注文
                       </Link>
                     )}
                   </div>
