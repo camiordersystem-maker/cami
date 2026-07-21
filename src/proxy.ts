@@ -41,6 +41,17 @@ export function proxy(request: NextRequest) {
     request.cookies.get("__Secure-next-auth.session-token")
 
   if (!sessionToken) {
+    // API routes: return JSON so `fetch().json()` doesn't choke on the
+    // redirected login HTML page (which happens when a session expires
+    // mid-session and the client silently follows the 307).
+    if (pathname.startsWith("/api/")) {
+      return withSecurityHeaders(
+        NextResponse.json(
+          { ok: false, error: { code: "UNAUTHORIZED", message: "ログインしてください" } },
+          { status: 401 }
+        )
+      )
+    }
     // 未ログイン → /login にリダイレクト
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
