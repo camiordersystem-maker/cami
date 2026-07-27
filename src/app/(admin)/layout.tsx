@@ -21,6 +21,7 @@ const superAdminNavItems = [
   { href: "/admin/administrators", label: "管理者設定" },
   { href: "/admin/settings", label: "システム設定" },
   { href: "/admin/feature-flags", label: "機能フラグ" },
+  { href: "/admin/audit-logs", label: "監査ログ" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

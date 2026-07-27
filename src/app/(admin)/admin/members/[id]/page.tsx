@@ -163,6 +163,9 @@ export default function AdminMemberDetailPage() {
         <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{member.companyName}</span>
+        <Link href={`/admin/audit-logs?targetType=member&targetId=${id}`} className="ml-auto text-xs text-slate-400 hover:text-slate-600 hover:underline">
+          変更履歴を見る
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">

@@ -79,6 +79,15 @@ export async function POST(req: NextRequest) {
       .values({ name, email, password: hashed, role, isActive: true })
       .returning({ id: schema.admins.id, name: schema.admins.name, email: schema.admins.email, role: schema.admins.role });
 
+    await db.insert(schema.auditLogs).values({
+      actorId: session!.user.id,
+      actorRole: "admin",
+      action: "create_admin",
+      targetType: "admin",
+      targetId: admin.id,
+      afterValue: JSON.stringify({ name, email, role }),
+    });
+
     return NextResponse.json(admin, { status: 201 });
   } catch (e) {
     console.error("administrators POST error:", e);
@@ -106,12 +115,28 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
+    const [before] = await db
+      .select({ name: schema.admins.name, email: schema.admins.email, role: schema.admins.role, isActive: schema.admins.isActive })
+      .from(schema.admins)
+      .where(eq(schema.admins.id, id));
+
     const updates: Record<string, unknown> = { ...rest, updatedAt: new Date() };
     if (password) {
       updates.password = await bcrypt.hash(password, 12);
     }
 
     await db.update(schema.admins).set(updates).where(eq(schema.admins.id, id));
+
+    // パスワードは平文はもちろんハッシュ値も監査ログへ残さない
+    await db.insert(schema.auditLogs).values({
+      actorId: session!.user.id,
+      actorRole: "admin",
+      action: password ? "update_admin_password" : "update_admin",
+      targetType: "admin",
+      targetId: id,
+      beforeValue: before ? JSON.stringify(before) : null,
+      afterValue: JSON.stringify(rest),
+    });
 
     return NextResponse.json({ ok: true });
   } catch (e) {

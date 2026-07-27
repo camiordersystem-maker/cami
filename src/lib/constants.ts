@@ -34,3 +34,30 @@ export const FEATURE_FLAG_DEFINITIONS: Array<{ key: FeatureFlagKey; label: strin
   { key: FEATURE_FLAGS.ANNOUNCEMENT_EMAIL, label: "お知らせのメール通知", description: "お知らせ作成時に対象会員へメールでも通知します。" },
   { key: FEATURE_FLAGS.MEMBER_ORDER_CSV_EXPORT, label: "会員向け注文CSVダウンロード", description: "会員が自分の注文履歴をCSVでダウンロードできるようにします。" },
 ];
+
+// 監査ログ（audit_logs.action / target_type）の日本語表示ラベル。
+// 新しい書込操作を追加したら、必ずここにもラベルを追加すること。
+export const AUDIT_ACTION_LABEL: Record<string, string> = {
+  create_order: "注文作成",
+  update_order: "注文更新",
+  cancel_request: "キャンセル申込",
+  cancel_approve: "キャンセル承認",
+  cancel_reject: "キャンセル却下",
+  create_member: "会員作成",
+  update_member: "会員情報更新",
+  create_admin: "管理者作成",
+  update_admin: "管理者情報更新",
+  update_admin_password: "管理者パスワード変更",
+  toggle_feature_flag: "機能フラグ変更",
+  send_invoice_email: "請求書メール送付",
+  agree_terms: "約款同意",
+};
+
+export const AUDIT_TARGET_TYPE_LABEL: Record<string, string> = {
+  order: "注文",
+  member: "会員",
+  admin: "管理者",
+  feature_flag: "機能フラグ",
+  monthly_invoice: "請求書",
+  terms: "約款",
+};

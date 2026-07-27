@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 import { apiErrorMessage } from "@/lib/client-api";
 
 type Admin = {
@@ -135,12 +136,17 @@ export default function AdminAdministratorsPage() {
           <h1 className="text-2xl font-bold text-slate-900">管理者設定</h1>
           <p className="text-slate-500 text-sm mt-1">本部ユーザーの登録・権限管理</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          + 管理者を追加
-        </button>
+        <div className="flex items-center gap-3">
+          <Link href="/admin/audit-logs?targetType=admin" className="text-xs text-slate-400 hover:text-slate-600 hover:underline">
+            変更履歴を見る
+          </Link>
+          <button
+            onClick={openCreate}
+            className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            + 管理者を追加
+          </button>
+        </div>
       </div>
 
       {/* Message */}
