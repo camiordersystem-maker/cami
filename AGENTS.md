@@ -51,7 +51,8 @@ Camiオイルの会員（サロン）向けBtoB受発注システム。**これ�
 | CSVエクスポート | `src/app/api/admin/export/{orders,members,inventory}/route.ts` |
 | メール送信・文面 | `src/lib/email.ts`（注文確認/承認/却下/新規申請/低在庫。esc()でHTMLエスケープ。dev=console, staging=suppress/redirect） |
 | 監視・死活 | `/api/health`（無認証）, `/api/readiness`（無認証・DB疎通。PG=execute/SQLite=run両対応） |
-| 監査ログ | DBテーブル `audit_logs`（各書込APIが記録）。UI未実装 |
+| 監査ログ・変更履歴 | DBテーブル `audit_logs`。閲覧: `src/app/api/admin/audit-logs/route.ts`(superadmin限定・フィルタ+ページング+actor名解決) + UI `admin/audit-logs/page.tsx`。ラベルは`constants.ts`のAUDIT_ACTION_LABEL/AUDIT_TARGET_TYPE_LABEL。新しい書込操作を追加したら必ずラベルも追加。会員/注文/管理者の各詳細ページに`?targetType=&targetId=`深リンクあり |
+| 機能フラグ | DBテーブル `feature_flags`（デフォルト全OFF）。API: `src/app/api/admin/feature-flags/route.ts`(superadmin限定toggle) + `src/app/api/feature-flags/route.ts`(全ロール読取専用)。ヘルパー: `src/lib/feature-flags.ts`(isFeatureEnabled/getFeatureFlagMap)。UI: `admin/feature-flags/page.tsx`。新機能を追加する時は`constants.ts`のFEATURE_FLAGSに追記+PG/SQLite両migrationにINSERT文追加 |
 | ステータス履歴 | DBテーブル `order_status_histories`（全遷移を記録） |
 | APIレスポンス形式 | `src/lib/api-response.ts`（`{ok,data}`/`{ok:false,error:{code,message}}`）。旧形式`{error:string}`のルートも残存 → クライアントは必ず `src/lib/client-api.ts` の `apiErrorMessage()`/`apiData()` を使う |
 | 定数・ラベル・色 | `src/lib/constants.ts`（税率・閾値・通知タイプ）, `src/lib/utils.ts`（ORDER_STATUS_LABEL/COLOR, 金額fmt, orderNo/invoiceNo生成） |
@@ -59,7 +60,7 @@ Camiオイルの会員（サロン）向けBtoB受発注システム。**これ�
 
 ## DBテーブル（スキーマは schema-pg.ts=本番 / schema-sqlite.ts=ローカル の2枚。**必ず両方更新**）
 
-member_ranks / members / admins(role列) / shipping_addresses(soft delete) / products / inventory / inventory_receipts / orders(status: pending,confirmed,shipped,delivered,cancelled,cancel_requested) / order_items / monthly_invoices / audit_logs / terms(version管理) / system_settings / notifications / announcements / announcement_reads / inventory_movements / order_status_histories / member_terms_consents / password_reset_tokens(未使用) / invoices・invoice_items・payments(スキーマのみ・UI未実装)
+member_ranks / members / admins(role列) / shipping_addresses(soft delete) / products / inventory / inventory_receipts / orders(status: pending,confirmed,shipped,delivered,cancelled,cancel_requested) / order_items / monthly_invoices / audit_logs / terms(version管理) / system_settings / notifications / announcements / announcement_reads / inventory_movements / order_status_histories / member_terms_consents / password_reset_tokens(未使用) / invoices・invoice_items・payments(スキーマのみ・UI未実装) / feature_flags(key text PK, enabled bool, 全機能デフォルトOFF)
 
 **マイグレーション追加手順（二重登録が必須・忘れると片方で動かない）**:
 1. PG: `src/lib/db/migrations/pg/00XX_*.sql` を作成 → `src/lib/db/migrate.pg.ts` の `EXTRA_MIGRATIONS` 配列に追記
@@ -83,6 +84,9 @@ member_ranks / members / admins(role列) / shipping_addresses(soft delete) / pro
 - SQLiteのjournal未登録・PGのEXTRA_MIGRATIONS未登録は「エラーなく単に適用されない」
 - `.env.local` は現状SQLiteモード（DATABASE_URLなし）。Docker PG検証時は `.env.local.example` を参照
 - 削除済み: `schema.pg.ts`(旧残骸), `check-connection.ts`, `api/admin/orders/[id]/detail`。復活させない
+- `git push`が403で失敗する場合、`gh auth status`でアクティブアカウントを確認（`gh auth switch --user shimacraft8`）。
+  このrepoはcamiordersystem-maker所有だがshimacraft8がコラボレーターとしてpush可能。他プロジェクト作業でghのアクティブアカウントが切り替わることがある
+- 管理者アカウントの作成/更新(`administrators` route)は当初audit_logsに未記録だった＝重大操作ほど記録漏れがないか個別に確認すること
 
 ## 仕様書・履歴
 
