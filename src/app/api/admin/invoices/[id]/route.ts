@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, and, gte, lt } from "drizzle-orm";
+import { eq, and, gte, lt, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
 import { isFeatureEnabled } from "@/lib/feature-flags";
@@ -31,23 +31,35 @@ export async function GET(
       .from(schema.members)
       .where(eq(schema.members.id, invoice.memberId));
 
-    const periodStart = new Date(invoice.year, invoice.month - 1, 1);
-    const periodEnd = new Date(invoice.year, invoice.month, 1);
+    // 発行時点で固定した対象注文（invoice_orders）を優先する。
+    // レコードが無い場合は、この仕組み導入前に発行された請求書なので、
+    // 従来どおり期間+ステータスで動的に再集計する（後方互換のフォールバック）。
+    const snapshotRows = await db
+      .select({ orderId: schema.invoiceOrders.orderId })
+      .from(schema.invoiceOrders)
+      .where(eq(schema.invoiceOrders.invoiceId, invoice.id));
 
-    const orders = await db
-      .select()
-      .from(schema.orders)
-      .where(
-        and(
-          eq(schema.orders.memberId, invoice.memberId),
-          gte(schema.orders.createdAt, periodStart),
-          lt(schema.orders.createdAt, periodEnd)
-        )
+    let billableOrders: (typeof schema.orders.$inferSelect)[];
+    if (snapshotRows.length > 0) {
+      const orderIds = snapshotRows.map((r: { orderId: string }) => r.orderId);
+      billableOrders = await db.select().from(schema.orders).where(inArray(schema.orders.id, orderIds));
+    } else {
+      const periodStart = new Date(invoice.year, invoice.month - 1, 1);
+      const periodEnd = new Date(invoice.year, invoice.month, 1);
+      const orders = await db
+        .select()
+        .from(schema.orders)
+        .where(
+          and(
+            eq(schema.orders.memberId, invoice.memberId),
+            gte(schema.orders.createdAt, periodStart),
+            lt(schema.orders.createdAt, periodEnd)
+          )
+        );
+      billableOrders = orders.filter((o: typeof orders[0]) =>
+        ["confirmed", "shipped", "delivered"].includes(o.status)
       );
-
-    const billableOrders = orders.filter((o: typeof orders[0]) =>
-      ["confirmed", "shipped", "delivered"].includes(o.status)
-    );
+    }
 
     const ordersWithItems = await Promise.all(
       billableOrders.map(async (order: typeof billableOrders[0]) => {

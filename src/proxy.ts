@@ -11,6 +11,7 @@ const PUBLIC_PATHS = [
   "/api/readiness",
   "/_next",
   "/favicon.ico",
+  "/cami-logo.png",
 ]
 
 function withSecurityHeaders(response: NextResponse) {

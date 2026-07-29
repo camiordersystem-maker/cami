@@ -256,6 +256,24 @@ export const monthlyInvoices = sqliteTable("monthly_invoices", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+// 請求書発行時点で対象となった注文を固定するスナップショット。
+// orders.status は発行後も変わり得る（例: pending→confirmed）ため、
+// このテーブルなしで期間+ステータスの動的再集計に頼ると、発行済み請求書の
+// 内訳一覧と保存済みの合計金額が食い違うバグになる。
+export const invoiceOrders = sqliteTable(
+  "invoice_orders",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    invoiceId: text("invoice_id").notNull().references(() => monthlyInvoices.id),
+    orderId: text("order_id").notNull().references(() => orders.id),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex("invoice_orders_invoice_order_unique").on(t.invoiceId, t.orderId),
+    index("invoice_orders_invoice_idx").on(t.invoiceId),
+  ]
+);
+
 // ─── system_settings ──────────────────────────────────────────────────────────
 
 export const systemSettings = sqliteTable("system_settings", {

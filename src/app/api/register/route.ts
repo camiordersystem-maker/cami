@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { sendNewMemberNotification } from "@/lib/email";
@@ -40,11 +40,13 @@ export async function POST(req: NextRequest) {
       return conflict("このメールアドレスは既に登録されています");
     }
 
-    // Get default rank (lowest)
+    // 新規登録の初期ランクは「掛け率が最も高い（＝割引が最も少ない）」入門ランクにする。
+    // rate昇順だと逆に最上位ランク（例: プラチナ35%）が新規未実績の会員に
+    // 付与されてしまうため、必ずdescで最も割引の少ないランクを選ぶ。
     const [defaultRank] = await db
       .select()
       .from(schema.memberRanks)
-      .orderBy(schema.memberRanks.rate);
+      .orderBy(desc(schema.memberRanks.rate));
 
     if (!defaultRank) {
       return internalError("システムエラー：ランク情報が見つかりません");

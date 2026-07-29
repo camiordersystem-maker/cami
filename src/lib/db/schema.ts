@@ -38,6 +38,7 @@ export const {
   invoiceItems,
   payments,
   featureFlags,
+  invoiceOrders,
   memberRanksRelations,
   membersRelations,
   shippingAddressesRelations,

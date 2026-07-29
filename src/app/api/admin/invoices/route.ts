@@ -5,6 +5,7 @@ import * as schema from "@/lib/db/schema";
 import { eq, desc, and, gte, lt } from "drizzle-orm";
 import { requireEditor } from "@/lib/admin-auth";
 import { generateInvoiceNo, lastDayOfMonth } from "@/lib/utils";
+import { isPostgresRuntime } from "@/lib/env";
 
 export async function GET() {
   const session = await auth();
@@ -111,21 +112,35 @@ export async function POST(req: NextRequest) {
       invoiceNo = generateInvoiceNo(year, month);
     }
 
-    const [invoice] = await db
-      .insert(schema.monthlyInvoices)
-      .values({
-        invoiceNo,
-        memberId,
-        year,
-        month,
-        subtotal,
-        taxAmount,
-        total,
-        paymentStatus: "unpaid",
-        paymentDueDate,
-        note: note ?? null,
-      })
-      .returning();
+    const run = isPostgresRuntime()
+      ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(fn)
+      : <T>(fn: (tx: typeof db) => Promise<T>) => fn(db);
+
+    const invoice = await run(async (tx) => {
+      const [created] = await tx
+        .insert(schema.monthlyInvoices)
+        .values({
+          invoiceNo,
+          memberId,
+          year,
+          month,
+          subtotal,
+          taxAmount,
+          total,
+          paymentStatus: "unpaid",
+          paymentDueDate,
+          note: note ?? null,
+        })
+        .returning();
+
+      // 発行時点の対象注文を固定する。orders.status は発行後も変わり得るため、
+      // これがないと詳細画面の内訳一覧と保存済み合計金額が食い違うバグになる。
+      await tx.insert(schema.invoiceOrders).values(
+        billableOrders.map((o: typeof billableOrders[0]) => ({ invoiceId: created.id, orderId: o.id }))
+      );
+
+      return created;
+    });
 
     return NextResponse.json(invoice, { status: 201 });
   } catch (e) {

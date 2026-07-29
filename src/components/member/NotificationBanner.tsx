@@ -16,11 +16,15 @@ const TYPE_ICON: Record<string, string> = {
   invoice_issued: "📄",
   order_confirmed: "✅",
   order_shipped: "🚚",
+  payment_overdue: "⏰",
 };
+
+const COLLAPSED_COUNT = 3;
 
 export default function NotificationBanner() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     fetch("/api/notifications")
@@ -65,6 +69,9 @@ export default function NotificationBanner() {
     );
   }
 
+  const visible = expanded ? notifications : notifications.slice(0, COLLAPSED_COUNT);
+  const hiddenCount = notifications.length - visible.length;
+
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-6">
       <div className="flex items-center justify-between mb-2">
@@ -74,7 +81,7 @@ export default function NotificationBanner() {
         </button>
       </div>
       <ul className="space-y-1">
-        {notifications.slice(0, 3).map((n) => (
+        {visible.map((n) => (
           <li key={n.id} className="text-sm text-amber-700 flex items-center gap-2">
             <span>{TYPE_ICON[n.type] ?? "🔔"}</span>
             <span>{n.message}</span>
@@ -86,6 +93,11 @@ export default function NotificationBanner() {
           </li>
         ))}
       </ul>
+      {hiddenCount > 0 && (
+        <button onClick={() => setExpanded(true)} className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline">
+          他{hiddenCount}件を表示
+        </button>
+      )}
     </div>
   );
 }
