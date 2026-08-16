@@ -41,7 +41,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Image src="/cami-logo.png" alt="Cami" width={140} height={56} className="object-contain" priority />
+            <Image src="/cami-logo.png" alt="Cami" width={140} height={56} className="object-contain h-auto" priority />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">受発注システム</h1>
           <p className="text-slate-500 text-sm mt-1">ログイン</p>

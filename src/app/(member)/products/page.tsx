@@ -437,6 +437,7 @@ export default function ProductsPage() {
                       max={p.availableBoxes}
                       value={quantities[p.id] ?? 0}
                       onChange={(e) => updateQty(p.id, parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
                       className="w-14 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button

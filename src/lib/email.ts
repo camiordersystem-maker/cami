@@ -1,11 +1,26 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM ?? "noreply@localhost";
-const isDev = process.env.RESEND_API_KEY === "re_dummy_local_dev";
+// APIキーが完全に未設定の環境（ローカルで.env.localを作り忘れた場合等）も
+// 安全側に倒して開発モード扱いにする。"re_dummy_local_dev"だけを見ていると
+// 未設定(undefined)を本番相当と誤判定し、後段のResend初期化でクラッシュしていた。
+const isDev = !process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_dummy_local_dev";
 const isStaging = process.env.VERCEL_ENV === "preview" || process.env.APP_ENV === "staging";
 const stagingEmailMode = process.env.STAGING_EMAIL_MODE ?? "suppress";
 const stagingTestRecipient = process.env.STAGING_EMAIL_TO;
+
+// Resendクライアントはモジュール読込時ではなく実際の送信直前に生成する。
+// `new Resend(undefined)` はコンストラクタで同期的に例外を投げるため、
+// トップレベルで初期化するとAPIキー未設定の環境で email.ts を import する
+// 全APIルート（注文作成含む）がリクエスト処理前にクラッシュしていた
+// （個別のtry/catchでは捕捉できないタイミングのため）。
+let resendClient: Resend | null = null;
+function getResendClient(): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 // User-supplied values (company names etc.) must not inject HTML into emails.
 function esc(value: string): string {
@@ -23,7 +38,7 @@ async function send(to: string, subject: string, html: string) {
   }
   if (isStaging) {
     if (stagingEmailMode === "redirect" && stagingTestRecipient) {
-      await resend.emails.send({
+      await getResendClient().emails.send({
         from: FROM,
         to: stagingTestRecipient,
         subject: `[STAGING redirect:${to}] ${subject}`,
@@ -34,7 +49,7 @@ async function send(to: string, subject: string, html: string) {
     }
     return;
   }
-  await resend.emails.send({ from: FROM, to, subject, html });
+  await getResendClient().emails.send({ from: FROM, to, subject, html });
 }
 
 export async function sendOrderConfirmation(params: {
