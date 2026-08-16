@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Settings = {
   id: string;
@@ -17,6 +18,7 @@ type Settings = {
 };
 
 export default function AdminSettingsPage() {
+  const { isViewer } = useAdminRole();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -96,6 +98,7 @@ export default function AdminSettingsPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        <fieldset disabled={isViewer} className="space-y-6">
         {/* 会社情報 */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="font-semibold text-slate-900 mb-4">会社情報</h2>
@@ -190,15 +193,18 @@ export default function AdminSettingsPage() {
             <p className="text-xs text-slate-400 mt-1.5">在庫がこの箱数以下になったときに本部へメール通知します</p>
           </div>
         </div>
+        </fieldset>
 
         <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "設定を保存する"}
-          </button>
+          {!isViewer && (
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+            >
+              {saving ? "保存中..." : "設定を保存する"}
+            </button>
+          )}
           {settings?.updatedAt && (
             <span className="text-xs text-slate-400">
               最終更新: {new Date(settings.updatedAt).toLocaleString("ja-JP")}

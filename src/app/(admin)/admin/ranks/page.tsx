@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Rank = {
   id: string;
@@ -11,6 +12,7 @@ type Rank = {
 };
 
 export default function AdminRanksPage() {
+  const { isViewer } = useAdminRole();
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Rank | null>(null);
@@ -68,12 +70,14 @@ export default function AdminRanksPage() {
           <h1 className="text-2xl font-bold text-slate-900">ランク管理</h1>
           <p className="text-slate-500 text-sm mt-1">卸値掛け率を会員ランクで管理します</p>
         </div>
-        <button
-          onClick={() => { setEditing(null); setShowForm(!showForm); setError(""); setMessage(null); }}
-          className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          + ランクを追加
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => { setEditing(null); setShowForm(!showForm); setError(""); setMessage(null); }}
+            className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            + ランクを追加
+          </button>
+        )}
       </div>
 
       {message && (
@@ -83,7 +87,7 @@ export default function AdminRanksPage() {
       )}
 
       {/* Form */}
-      {(showForm || editing) && (
+      {!isViewer && (showForm || editing) && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
           <h2 className="font-semibold text-slate-900 mb-4">{editing ? "ランクを編集" : "新規ランク追加"}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
@@ -166,12 +170,14 @@ export default function AdminRanksPage() {
                 {rank.description && (
                   <div className="text-xs text-slate-500 mb-3">{rank.description}</div>
                 )}
-                <button
-                  onClick={() => { setEditing(rank); setShowForm(false); setError(""); setMessage(null); }}
-                  className="text-xs text-blue-600 hover:underline"
-                >
-                  編集
-                </button>
+                {!isViewer && (
+                  <button
+                    onClick={() => { setEditing(rank); setShowForm(false); setError(""); setMessage(null); }}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    編集
+                  </button>
+                )}
               </div>
             );
           })

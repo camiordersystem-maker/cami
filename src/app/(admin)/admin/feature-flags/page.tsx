@@ -12,7 +12,7 @@ type FeatureFlag = {
 };
 
 export default function AdminFeatureFlagsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const myAdminRole = (session?.user as { adminRole?: string })?.adminRole;
 
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -49,6 +49,10 @@ export default function AdminFeatureFlagsPage() {
       setMessage({ text: apiErrorMessage(json, "更新に失敗しました"), ok: false });
     }
     setSavingKey(null);
+  }
+
+  if (status === "loading") {
+    return <div className="p-8 text-slate-500">読み込み中...</div>;
   }
 
   if (myAdminRole !== "superadmin") {

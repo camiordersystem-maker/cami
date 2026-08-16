@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useConfirm } from "@/lib/useConfirm";
 
 type Admin = {
   id: string;
@@ -27,7 +28,7 @@ const ROLE_COLOR: Record<string, string> = {
 };
 
 export default function AdminAdministratorsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const myAdminRole = (session?.user as { adminRole?: string })?.adminRole;
 
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -36,6 +37,7 @@ export default function AdminAdministratorsPage() {
   const [editing, setEditing] = useState<Admin | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
 
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "editor" as string });
 
@@ -100,7 +102,7 @@ export default function AdminAdministratorsPage() {
 
   async function toggleActive(admin: Admin) {
     const action = admin.isActive ? "無効化" : "有効化";
-    if (!confirm(`${admin.name} を${action}しますか？`)) return;
+    if (!(await confirmAsync(`${admin.name} を${action}しますか？`))) return;
     try {
       const res = await fetch("/api/admin/administrators", {
         method: "PUT",
@@ -121,6 +123,10 @@ export default function AdminAdministratorsPage() {
 
   const myId = session?.user?.id;
 
+  if (status === "loading") {
+    return <div className="p-8 text-slate-500">読み込み中...</div>;
+  }
+
   if (myAdminRole !== "superadmin") {
     return (
       <div className="py-20 text-center text-slate-500">
@@ -131,6 +137,7 @@ export default function AdminAdministratorsPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">管理者設定</h1>

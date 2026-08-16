@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useConfirm } from "@/lib/useConfirm";
 
 type Address = {
   id: string;
@@ -21,6 +22,7 @@ export default function AddressesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const { confirmAsync, ConfirmDialog } = useConfirm();
 
   async function load() {
     const res = await fetch("/api/addresses");
@@ -68,7 +70,7 @@ export default function AddressesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("この配送先を削除しますか？")) return;
+    if (!(await confirmAsync("この配送先を削除しますか？"))) return;
     try {
       await fetch(`/api/addresses/${id}`, { method: "DELETE" });
       setMessage("配送先を削除しました");
@@ -96,6 +98,7 @@ export default function AddressesPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">配送先管理</h1>

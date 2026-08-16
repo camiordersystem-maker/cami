@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useConfirm } from "@/lib/useConfirm";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Terms = {
   id: string;
@@ -20,6 +22,8 @@ export default function AdminTermsPage() {
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
+  const { isViewer } = useAdminRole();
 
   async function load() {
     const res = await fetch("/api/admin/terms");
@@ -55,7 +59,7 @@ export default function AdminTermsPage() {
       setMessage({ text: "内容を入力してください", ok: false });
       return;
     }
-    if (!confirm("約款を公開しますか？会員が閲覧できるようになります。")) return;
+    if (!(await confirmAsync("約款を公開しますか？会員が閲覧できるようになります。"))) return;
     setPublishing(true);
     setMessage(null);
 
@@ -92,6 +96,7 @@ export default function AdminTermsPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">約款管理</h1>
@@ -129,26 +134,31 @@ export default function AdminTermsPage() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={28}
-            className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            readOnly={isViewer}
+            className="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y disabled:bg-slate-50"
             placeholder="利用規約・契約書の内容を入力してください..."
           />
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={saveDraft}
-            disabled={saving}
-            className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "下書き保存"}
-          </button>
-          <button
-            onClick={publish}
-            disabled={publishing || !content.trim()}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {publishing ? "公開中..." : "公開する"}
-          </button>
+          {!isViewer && (
+            <>
+              <button
+                onClick={saveDraft}
+                disabled={saving}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {saving ? "保存中..." : "下書き保存"}
+              </button>
+              <button
+                onClick={publish}
+                disabled={publishing || !content.trim()}
+                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                {publishing ? "公開中..." : "公開する"}
+              </button>
+            </>
+          )}
           {terms?.updatedAt && (
             <span className="text-xs text-slate-400 ml-auto">
               最終更新: {new Date(terms.updatedAt.replace(" ", "T")).toLocaleString("ja-JP")}

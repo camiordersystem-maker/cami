@@ -81,7 +81,9 @@ export default function MemberOrderDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   async function handleCancelRequest() {
-    if (!confirm("キャンセルを申し込みますか？本部の承認後にキャンセルが確定します。")) return;
+    // このボタンはすでに確認フォーム（理由入力欄+送信ボタン）を経由しており、
+    // 追加の window.confirm() は不要な二重確認だった。ネイティブダイアログは
+    // ブラウザ自動テストツールに抑制され送信できなくなる問題もあったため削除。
     setCancelling(true);
     setMessage(null);
     try {

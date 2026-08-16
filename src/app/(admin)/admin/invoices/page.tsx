@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Invoice = {
   id: string;
@@ -23,6 +24,7 @@ type Invoice = {
 type Member = { id: string; companyName: string };
 
 export default function AdminInvoicesPage() {
+  const { isViewer } = useAdminRole();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,7 @@ export default function AdminInvoicesPage() {
       )}
 
       {/* Generate form */}
+      {!isViewer && (
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
         <h2 className="font-semibold text-slate-900 mb-4">月次請求書の発行</h2>
         <form onSubmit={generate} className="flex flex-wrap gap-4 items-end">
@@ -137,6 +140,7 @@ export default function AdminInvoicesPage() {
           ※ 対象月の確認済み・発送済み・配達完了の注文をまとめて請求書を発行します。支払期限は翌月末です。
         </p>
       </div>
+      )}
 
       {/* Invoice List */}
       <div className="bg-white rounded-xl border border-slate-200">

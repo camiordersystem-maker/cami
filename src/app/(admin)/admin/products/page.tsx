@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Product = {
   id: string;
@@ -16,6 +17,7 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
+  const { isViewer } = useAdminRole();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -130,16 +132,18 @@ export default function AdminProductsPage() {
           <h1 className="text-2xl font-bold text-slate-900">商品管理</h1>
           <p className="text-slate-500 text-sm mt-1">商品マスタの追加・編集・画像登録</p>
         </div>
-        <button
-          onClick={() => openForm(null)}
-          className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          + 商品を追加
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => openForm(null)}
+            className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            + 商品を追加
+          </button>
+        )}
       </div>
 
       {/* Form */}
-      {isFormOpen && (
+      {!isViewer && isFormOpen && (
         <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
           <h2 className="font-semibold text-slate-900 mb-4">{editing ? "商品を編集" : "新規商品追加"}</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
@@ -301,24 +305,26 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => openForm(p)}
-                      className="text-xs text-blue-600 hover:underline"
-                    >
-                      編集
-                    </button>
-                    <button
-                      onClick={() => toggleActive(p)}
-                      className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
-                        p.isActive
-                          ? "border-slate-300 text-slate-600 hover:bg-slate-100"
-                          : "border-green-300 text-green-700 hover:bg-green-50"
-                      }`}
-                    >
-                      {p.isActive ? "停止" : "再開"}
-                    </button>
-                  </div>
+                  {!isViewer && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => openForm(p)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        編集
+                      </button>
+                      <button
+                        onClick={() => toggleActive(p)}
+                        className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
+                          p.isActive
+                            ? "border-slate-300 text-slate-600 hover:bg-slate-100"
+                            : "border-green-300 text-green-700 hover:bg-green-50"
+                        }`}
+                      >
+                        {p.isActive ? "停止" : "再開"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

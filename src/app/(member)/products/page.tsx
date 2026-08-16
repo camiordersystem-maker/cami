@@ -432,11 +432,11 @@ export default function ProductsPage() {
                       −
                     </button>
                     <input
-                      type="number"
-                      min={0}
-                      max={p.availableBoxes}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={quantities[p.id] ?? 0}
-                      onChange={(e) => updateQty(p.id, parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateQty(p.id, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
                       onFocus={(e) => e.target.select()}
                       className="w-14 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />

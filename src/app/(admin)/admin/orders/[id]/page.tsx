@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatCurrency, formatDateTime, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useConfirm } from "@/lib/useConfirm";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type OrderDetail = {
   id: string;
@@ -51,9 +53,11 @@ export default function AdminOrderDetailPage() {
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
+  const { isViewer } = useAdminRole();
 
   async function handleCancelApprove() {
-    if (!confirm("キャンセルを承認しますか？在庫が戻されます。")) return;
+    if (!(await confirmAsync("キャンセルを承認しますか？在庫が戻されます。"))) return;
     setUpdating(true);
     setMessage(null);
     const res = await fetch(`/api/admin/orders/${id}/cancel-approve`, { method: "POST" });
@@ -64,7 +68,7 @@ export default function AdminOrderDetailPage() {
   }
 
   async function handleCancelReject() {
-    if (!confirm("キャンセル申込を拒否しますか？注文は元のステータスに戻ります。")) return;
+    if (!(await confirmAsync("キャンセル申込を拒否しますか？注文は元のステータスに戻ります。"))) return;
     setUpdating(true);
     setMessage(null);
     const res = await fetch(`/api/admin/orders/${id}/cancel-reject`, { method: "POST" });
@@ -117,7 +121,7 @@ export default function AdminOrderDetailPage() {
   }
 
   async function updateStatus(nextStatus: string) {
-    if (!confirm(`ステータスを「${ORDER_STATUS_LABEL[nextStatus]}」に変更しますか？`)) return;
+    if (!(await confirmAsync(`ステータスを「${ORDER_STATUS_LABEL[nextStatus]}」に変更しますか？`))) return;
     if (nextStatus === "cancelled") {
       setShowCancelForm(true);
       return;
@@ -151,6 +155,7 @@ export default function AdminOrderDetailPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
         <Link href="/admin/orders" className="text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
         <span className="text-slate-300">/</span>
@@ -210,7 +215,7 @@ export default function AdminOrderDetailPage() {
       )}
 
       {/* Cancel requested action panel */}
-      {order.status === "cancel_requested" && (
+      {order.status === "cancel_requested" && !isViewer && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
           <p className="text-sm font-semibold text-red-800 mb-1">キャンセル申込があります</p>
           {order.cancelReason && (
@@ -243,7 +248,7 @@ export default function AdminOrderDetailPage() {
       )}
 
       {/* Actions */}
-      {transitions.length > 0 && (
+      {transitions.length > 0 && !isViewer && (
         <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
           <h2 className="font-semibold text-slate-900 mb-4 text-sm">ステータス操作</h2>
           {order.status === "confirmed" && (
@@ -276,22 +281,28 @@ export default function AdminOrderDetailPage() {
       {/* Payment Status */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
         <h2 className="font-semibold text-slate-900 mb-4 text-sm">支払い状況</h2>
-        <div className="flex flex-wrap gap-3">
-          {(["unpaid", "paid", "overdue"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => patch({ paymentStatus: s })}
-              disabled={updating || order.paymentStatus === s}
-              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
-                order.paymentStatus === s
-                  ? "bg-slate-800 text-white border-slate-800"
-                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-              }`}
-            >
-              {PAYMENT_STATUS_LABEL[s]}
-            </button>
-          ))}
-        </div>
+        {isViewer ? (
+          <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${PAYMENT_STATUS_COLOR[order.paymentStatus] ?? "bg-gray-100 text-gray-600"}`}>
+            {PAYMENT_STATUS_LABEL[order.paymentStatus] ?? order.paymentStatus}
+          </span>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {(["unpaid", "paid", "overdue"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => patch({ paymentStatus: s })}
+                disabled={updating || order.paymentStatus === s}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                  order.paymentStatus === s
+                    ? "bg-slate-800 text-white border-slate-800"
+                    : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                {PAYMENT_STATUS_LABEL[s]}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

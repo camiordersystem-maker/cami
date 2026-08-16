@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { formatDateTime } from "@/lib/utils";
 import { apiData, apiErrorMessage } from "@/lib/client-api";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type InventoryItem = {
   productId: string;
@@ -29,6 +30,7 @@ type Receipt = {
 const LOW_STOCK = 10;
 
 export default function AdminInventoryPage() {
+  const { isViewer } = useAdminRole();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,12 +273,14 @@ export default function AdminInventoryPage() {
                               </div>
                               <div className="text-xs text-slate-400">箱</div>
                             </div>
-                            <button
-                              onClick={() => setEditing(item.productId)}
-                              className="text-sm text-blue-600 hover:underline px-2"
-                            >
-                              編集
-                            </button>
+                            {!isViewer && (
+                              <button
+                                onClick={() => setEditing(item.productId)}
+                                className="text-sm text-blue-600 hover:underline px-2"
+                              >
+                                編集
+                              </button>
+                            )}
                           </>
                         )}
                       </div>

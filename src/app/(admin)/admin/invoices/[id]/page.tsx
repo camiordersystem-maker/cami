@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import { formatCurrency, formatDate, PAYMENT_STATUS_LABEL } from "@/lib/utils";
 import { apiData, apiErrorMessage } from "@/lib/client-api";
 import { FEATURE_FLAGS } from "@/lib/constants";
+import { useConfirm } from "@/lib/useConfirm";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type SystemSettings = {
   companyName: string;
@@ -63,6 +65,8 @@ export default function AdminInvoiceDetailPage() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [sending, setSending] = useState(false);
   const [emailFeatureEnabled, setEmailFeatureEnabled] = useState(false);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
+  const { isViewer } = useAdminRole();
 
   useEffect(() => {
     fetch("/api/feature-flags")
@@ -74,7 +78,7 @@ export default function AdminInvoiceDetailPage() {
   }, []);
 
   async function sendInvoiceEmail() {
-    if (!confirm("この請求書を会員へメールで送付しますか？")) return;
+    if (!(await confirmAsync("この請求書を会員へメールで送付しますか？"))) return;
     setSending(true);
     setMessage(null);
     const res = await fetch(`/api/admin/invoices/${id}/send`, { method: "POST" });
@@ -136,12 +140,13 @@ export default function AdminInvoiceDetailPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
         <Link href="/admin/invoices" className="text-slate-500 hover:text-slate-700 text-sm">← 請求書一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{invoice.invoiceNo}</span>
         <div className="ml-auto flex items-center gap-2">
-          {emailFeatureEnabled && (
+          {emailFeatureEnabled && !isViewer && (
             <button
               onClick={sendInvoiceEmail}
               disabled={sending}

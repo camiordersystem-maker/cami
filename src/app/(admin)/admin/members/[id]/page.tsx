@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatDate, ORDER_STATUS_LABEL, ORDER_STATUS_COLOR, MEMBER_STATUS_LABEL, MEMBER_STATUS_COLOR } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useConfirm } from "@/lib/useConfirm";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Member = {
   id: string;
@@ -33,6 +35,8 @@ export default function AdminMemberDetailPage() {
   const [updating, setUpdating] = useState(false);
   const [selectedRank, setSelectedRank] = useState("");
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
+  const { isViewer } = useAdminRole();
 
   // Basic info edit state
   const [editingInfo, setEditingInfo] = useState(false);
@@ -110,7 +114,7 @@ export default function AdminMemberDetailPage() {
 
   async function updateStatus(status: string) {
     const label = MEMBER_STATUS_LABEL[status];
-    if (!confirm(`ステータスを「${label}」に変更しますか？`)) return;
+    if (!(await confirmAsync(`ステータスを「${label}」に変更しますか？`))) return;
     await patch({ status }, `ステータスを「${label}」に変更しました`);
   }
 
@@ -159,6 +163,7 @@ export default function AdminMemberDetailPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
         <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
         <span className="text-slate-300">/</span>
@@ -191,7 +196,7 @@ export default function AdminMemberDetailPage() {
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-slate-900 text-sm">基本情報</h2>
-              {!editingInfo && (
+              {!isViewer && !editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
                   className="text-xs text-blue-600 hover:underline"
@@ -257,6 +262,7 @@ export default function AdminMemberDetailPage() {
           </div>
 
           {/* Rank Change */}
+          {!isViewer && (
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h2 className="font-semibold text-slate-900 text-sm mb-3">ランク設定</h2>
             <div className="text-xs text-slate-500 mb-2">現在：{member.rank?.name}（{member.rank ? Math.round(member.rank.rate * 100) : "—"}%）</div>
@@ -279,8 +285,10 @@ export default function AdminMemberDetailPage() {
               ランクを変更する
             </button>
           </div>
+          )}
 
           {/* Status Actions */}
+          {!isViewer && (
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h2 className="font-semibold text-slate-900 text-sm mb-3">ステータス操作</h2>
             <div className="space-y-2">
@@ -325,6 +333,7 @@ export default function AdminMemberDetailPage() {
               )}
             </div>
           </div>
+          )}
 
           {/* Shipping Addresses */}
           {member.addresses.length > 0 && (

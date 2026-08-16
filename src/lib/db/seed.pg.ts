@@ -45,7 +45,7 @@ async function main() {
   const existingAdmins = await sql`SELECT id FROM admins WHERE email = ${adminEmail}`;
   if (existingAdmins.length === 0) {
     const hashed = await bcrypt.hash(adminPassword, 12);
-    await sql`INSERT INTO admins (id, email, password, name) VALUES (${randomUUID()}, ${adminEmail}, ${hashed}, ${"システム管理者"})`;
+    await sql`INSERT INTO admins (id, email, password, name, role) VALUES (${randomUUID()}, ${adminEmail}, ${hashed}, ${"システム管理者"}, ${"superadmin"})`;
     console.log(`  ✓ Admin created: ${adminEmail}`);
   } else {
     console.log(`  ℹ  Admin already exists: ${adminEmail}`);

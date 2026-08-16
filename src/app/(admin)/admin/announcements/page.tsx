@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { formatDate } from "@/lib/utils";
 import { apiErrorMessage } from "@/lib/client-api";
+import { useConfirm } from "@/lib/useConfirm";
+import { useAdminRole } from "@/lib/useAdminRole";
 
 type Announcement = {
   id: string;
@@ -23,6 +25,8 @@ export default function AdminAnnouncementsPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const { confirmAsync, ConfirmDialog } = useConfirm();
+  const { isViewer } = useAdminRole();
 
   const [form, setForm] = useState({
     title: "",
@@ -71,7 +75,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("このお知らせを削除しますか？")) return;
+    if (!(await confirmAsync("このお知らせを削除しますか？"))) return;
     const res = await fetch(`/api/admin/announcements/${id}`, { method: "DELETE" });
     if (res.ok) { setMessage({ text: "削除しました", ok: true }); load(); }
     else setMessage({ text: "削除に失敗しました", ok: false });
@@ -79,6 +83,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div>
+      {ConfirmDialog}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">お知らせ管理</h1>
         <p className="text-slate-500 text-sm mt-1">全体・個別お知らせの作成・削除</p>
@@ -91,6 +96,7 @@ export default function AdminAnnouncementsPage() {
       )}
 
       {/* Create Form */}
+      {!isViewer && (
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8">
         <h2 className="font-semibold text-slate-900 mb-4 text-sm">新規お知らせ作成</h2>
         <form onSubmit={handleCreate} className="space-y-4">
@@ -162,6 +168,7 @@ export default function AdminAnnouncementsPage() {
           </button>
         </form>
       </div>
+      )}
 
       {/* List */}
       <div className="bg-white rounded-xl border border-slate-200">
@@ -189,12 +196,14 @@ export default function AdminAnnouncementsPage() {
                   <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{a.body}</div>
                   <div className="text-xs text-slate-400 mt-1">{formatDate(a.createdAt)}</div>
                 </div>
-                <button
-                  onClick={() => handleDelete(a.id)}
-                  className="text-xs text-red-500 hover:text-red-700 shrink-0 px-2 py-1 rounded hover:bg-red-50"
-                >
-                  削除
-                </button>
+                {!isViewer && (
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    className="text-xs text-red-500 hover:text-red-700 shrink-0 px-2 py-1 rounded hover:bg-red-50"
+                  >
+                    削除
+                  </button>
+                )}
               </div>
             ))}
           </div>

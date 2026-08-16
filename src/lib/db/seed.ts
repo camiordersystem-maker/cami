@@ -71,6 +71,7 @@ async function main() {
       email: adminEmail,
       password: hashed,
       name: "システム管理者",
+      role: "superadmin",
     });
     console.log(`  ✓ Admin created: ${adminEmail}`);
     console.log(`  ⚠  Initial password: ${adminPassword}（要変更）`);
