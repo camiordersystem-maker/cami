@@ -27,7 +27,14 @@ export async function GET(
     if (!invoice) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const [member] = await db
-      .select()
+      .select({
+        id: schema.members.id,
+        companyName: schema.members.companyName,
+        contactName: schema.members.contactName,
+        email: schema.members.email,
+        address: schema.members.address,
+        phone: schema.members.phone,
+      })
       .from(schema.members)
       .where(eq(schema.members.id, invoice.memberId));
 

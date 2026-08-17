@@ -2,14 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-
-function escapeCsv(val: unknown): string {
-  const s = val == null ? "" : String(val);
-  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
+import { requireEditor } from "@/lib/admin-auth";
+import { escapeCsv } from "@/lib/csv";
 
 function parseTs(d: Date | string | null | undefined): Date | null {
   if (d == null) return null;
@@ -30,9 +24,8 @@ function toJst(date: Date | string | null | undefined): string {
 
 export async function GET() {
   const session = await auth();
-  if (!session || (session.user as { role: string }).role !== "admin") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireEditor(session);
+  if (authErr) return authErr;
 
   const products = await db.select().from(schema.products);
   const invs = await db.select().from(schema.inventory);

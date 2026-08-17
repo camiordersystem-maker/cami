@@ -6,14 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 import { FEATURE_FLAGS } from "@/lib/constants";
 import { ORDER_STATUS_LABEL } from "@/lib/utils";
-
-function escapeCsv(val: unknown): string {
-  const s = val == null ? "" : String(val);
-  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
+import { escapeCsv } from "@/lib/csv";
 
 function toJst(date: Date | string | null | undefined): string {
   if (!date) return "";

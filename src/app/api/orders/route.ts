@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { eq, desc, and, gte, isNull } from "drizzle-orm";
+import { eq, desc, and, gte, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateOrderNo, TAX_RATE } from "@/lib/utils";
 import { sendOrderConfirmation } from "@/lib/email";
@@ -153,11 +153,51 @@ export async function POST(req: NextRequest) {
       orderNo = generateOrderNo();
     }
 
+    // 同一会員の同時多重送信（ダブルクリック・ネットワーク再送）で同じ内容の
+    // 注文が複数作成されるのを防ぐため、会員単位のアドバイザリロックで
+    // 注文作成トランザクションを直列化し、直近の同一内容注文があれば
+    // 新規作成せずその注文を返す。
     const run = isPostgresRuntime()
-      ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(fn)
+      ? <T>(fn: (tx: typeof db) => Promise<T>) => db.transaction(async (tx: typeof db) => {
+          await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${memberId}))`);
+          return fn(tx);
+        })
       : <T>(fn: (tx: typeof db) => Promise<T>) => fn(db);
 
+    const itemSignature = [...items]
+      .sort((a, b) => a.productId.localeCompare(b.productId))
+      .map((i) => `${i.productId}:${i.boxes}`)
+      .join(",");
+
     const order = await run(async (tx) => {
+      const duplicateWindowStart = new Date(Date.now() - 10_000);
+      const recentOrders = await tx
+        .select({ id: schema.orders.id, orderNo: schema.orders.orderNo })
+        .from(schema.orders)
+        .where(
+          and(
+            eq(schema.orders.memberId, memberId),
+            eq(schema.orders.shippingAddressId, shippingAddressId),
+            eq(schema.orders.total, total),
+            gte(schema.orders.createdAt, duplicateWindowStart)
+          )
+        )
+        .orderBy(desc(schema.orders.createdAt));
+
+      for (const candidate of recentOrders) {
+        const candidateItems = await tx
+          .select({ productId: schema.orderItems.productId, boxes: schema.orderItems.boxes })
+          .from(schema.orderItems)
+          .where(eq(schema.orderItems.orderId, candidate.id));
+        const candidateSignature = candidateItems
+          .sort((a: { productId: string; boxes: number }, b: { productId: string; boxes: number }) => a.productId.localeCompare(b.productId))
+          .map((i: { productId: string; boxes: number }) => `${i.productId}:${i.boxes}`)
+          .join(",");
+        if (candidateSignature === itemSignature) {
+          return { ...candidate, isDuplicate: true as const };
+        }
+      }
+
       const [created] = await tx
         .insert(schema.orders)
         .values({
@@ -243,18 +283,20 @@ export async function POST(req: NextRequest) {
         afterValue: JSON.stringify({ orderNo, total }),
       });
 
-      return created;
+      return { ...created, isDuplicate: false as const };
     });
 
-    try {
-      await sendOrderConfirmation({
-        to: member.email,
-        companyName: member.companyName,
-        orderNo: order.orderNo,
-        total: order.total,
-      });
-    } catch (e) {
-      console.error("Order confirmation email failed:", e);
+    if (!order.isDuplicate) {
+      try {
+        await sendOrderConfirmation({
+          to: member.email,
+          companyName: member.companyName,
+          orderNo: order.orderNo,
+          total: order.total,
+        });
+      } catch (e) {
+        console.error("Order confirmation email failed:", e);
+      }
     }
 
     return ok({ orderId: order.id, orderNo: order.orderNo }, "注文を作成しました", { status: 201 });
