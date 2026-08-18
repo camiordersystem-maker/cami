@@ -7,7 +7,6 @@ const url = process.env.DATABASE_URL;
 assertStagingDatabaseUrl(url);
 const databaseUrl = url;
 const sql = neon(databaseUrl);
-const password = await bcrypt.hash(process.env.STAGING_DEFAULT_PASSWORD ?? "Staging1234!", 12);
 
 async function upsertRank(name: string, rate: string) {
   const rows = await sql`SELECT id FROM member_ranks WHERE name = ${name}`;
@@ -18,6 +17,7 @@ async function upsertRank(name: string, rate: string) {
 }
 
 async function main() {
+  const password = await bcrypt.hash(process.env.STAGING_DEFAULT_PASSWORD ?? "Staging1234!", 12);
   const rankId = await upsertRank("ステージング標準", "0.50");
   const admins = [
     ["stage-superadmin@example.com", "ステージングSuperadmin", "superadmin"],
