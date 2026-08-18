@@ -23,5 +23,8 @@ export const authConfig = {
     },
   },
   providers: [], // Credentials added in auth.ts (Node.js only)
-  session: { strategy: "jwt" as const },
+  // JWTセッションはステートレスなため、パスワード変更やログアウト操作を
+  // 他端末の既存セッションへ即座に反映できない。maxAgeを短くして、
+  // セッション漏えい・端末紛失時の影響時間を抑える（既定の30日は長すぎる）。
+  session: { strategy: "jwt" as const, maxAge: 14 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
 } satisfies NextAuthConfig;
