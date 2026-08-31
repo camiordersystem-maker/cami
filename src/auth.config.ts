@@ -1,6 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  // Vercel/Cloudflare Workersなどエッジ実行環境ではリクエストの転送経路が
+  // 挟まるため、Auth.jsが受け取るHostヘッダーを自前で検証できず
+  // デフォルトでは「信頼できないホスト」としてエラーになる
+  // (UntrustedHost)。TLS終端・Hostヘッダーの正当性はプラットフォーム側
+  // (Vercel/Cloudflare)が担保しているため、ここでは信頼して問題ない。
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
