@@ -120,6 +120,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">実行者</label>
           <select
+            aria-label="実行者"
             value={actorRole}
             onChange={(e) => updateFilter({ actorRole: e.target.value })}
             className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -133,6 +134,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">操作の種類</label>
           <select
+            aria-label="操作の種類"
             value={action}
             onChange={(e) => updateFilter({ action: e.target.value })}
             className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -147,6 +149,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">対象の種類</label>
           <select
+            aria-label="対象の種類"
             value={targetType}
             onChange={(e) => updateFilter({ targetType: e.target.value })}
             className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -161,6 +164,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">対象ID</label>
           <input
+            aria-label="対象ID"
             type="text"
             defaultValue={targetId}
             onBlur={(e) => updateFilter({ targetId: e.target.value })}
@@ -172,6 +176,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">期間（から）</label>
           <input
+            aria-label="期間（から）"
             type="date"
             value={from}
             onChange={(e) => updateFilter({ from: e.target.value })}
@@ -181,6 +186,7 @@ export default function AdminAuditLogsPage() {
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-slate-500">期間（まで）</label>
           <input
+            aria-label="期間（まで）"
             type="date"
             value={to}
             onChange={(e) => updateFilter({ to: e.target.value })}

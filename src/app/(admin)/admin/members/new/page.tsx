@@ -123,6 +123,7 @@ export default function AdminNewMemberPage() {
               店舗名 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="店舗名"
               type="text"
               required
               value={form.companyName}
@@ -136,6 +137,7 @@ export default function AdminNewMemberPage() {
               担当者名 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="担当者名"
               type="text"
               required
               value={form.contactName}
@@ -152,6 +154,7 @@ export default function AdminNewMemberPage() {
               メールアドレス <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="メールアドレス"
               type="email"
               required
               value={form.email}
@@ -165,6 +168,7 @@ export default function AdminNewMemberPage() {
               初期パスワード <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="初期パスワード"
               type="text"
               required
               minLength={8}
@@ -182,6 +186,7 @@ export default function AdminNewMemberPage() {
               電話番号 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="電話番号"
               type="tel"
               required
               value={form.phone}
@@ -193,6 +198,7 @@ export default function AdminNewMemberPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">ランク</label>
             <select
+              aria-label="ランク"
               value={form.rankId}
               onChange={(e) => update("rankId", e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -211,6 +217,7 @@ export default function AdminNewMemberPage() {
             住所 <span className="text-red-500">*</span>
           </label>
           <input
+            aria-label="住所"
             type="text"
             required
             value={form.address}
@@ -225,6 +232,7 @@ export default function AdminNewMemberPage() {
             事業概要（任意）
           </label>
           <textarea
+            aria-label="事業概要（任意）"
             value={form.businessDescription}
             onChange={(e) => update("businessDescription", e.target.value)}
             rows={3}

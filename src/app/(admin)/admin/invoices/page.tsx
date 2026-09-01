@@ -95,6 +95,7 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">会員</label>
             <select
+              aria-label="会員"
               value={form.memberId}
               onChange={(e) => setForm((f) => ({ ...f, memberId: e.target.value }))}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
@@ -109,6 +110,7 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">年</label>
             <select
+              aria-label="年"
               value={form.year}
               onChange={(e) => setForm((f) => ({ ...f, year: parseInt(e.target.value) }))}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -119,6 +121,7 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">月</label>
             <select
+              aria-label="月"
               value={form.month}
               onChange={(e) => setForm((f) => ({ ...f, month: parseInt(e.target.value) }))}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

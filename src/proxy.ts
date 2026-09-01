@@ -71,10 +71,10 @@ function shouldBlockCrossSiteMutation(request: NextRequest) {
 }
 
 function withSecurityHeaders(response: NextResponse) {
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:")
+
+
+
+
   if (process.env.NODE_ENV === "production") {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
   }
