@@ -194,7 +194,13 @@ export default function AdminLayout({
 
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-60 md:h-screen md:sticky md:top-0 bg-slate-900 text-white flex-col shrink-0 overflow-hidden">
+      <aside
+        className="hidden md:flex md:w-60 md:h-screen md:sticky md:top-0 bg-slate-900 text-white flex-col shrink-0 overflow-hidden"
+        style={{
+          height: "calc(100dvh - var(--cami-top-offset, 0px))",
+          top: "var(--cami-top-offset, 0px)",
+        }}
+      >
         <div className="shrink-0 px-6 py-5 border-b border-slate-700">
           <Image
             src="/cami-logo.png"
