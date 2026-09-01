@@ -37,11 +37,11 @@ export default function AccountPage() {
         setMessage({ text: "パスワードを変更しました", ok: true });
         setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
       setSaving(false);
-      setMessage({ text: "ネットワークエラーが発生しました。再度お試しください。", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

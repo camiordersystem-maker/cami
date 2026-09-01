@@ -129,7 +129,7 @@ export default function AdminInvoiceDetailPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: apiErrorMessage(d, "エラーが発生しました"), ok: false });
+      setMessage({ text: apiErrorMessage(d, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
     }
   }
 

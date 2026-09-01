@@ -35,7 +35,7 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(apiErrorMessage(data, "エラーが発生しました"));
+      setError(apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"));
       return;
     }
 

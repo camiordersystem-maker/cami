@@ -92,11 +92,11 @@ export default function AdminAdministratorsPage() {
         setEditing(null);
         load();
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
       setSaving(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 
@@ -114,10 +114,10 @@ export default function AdminAdministratorsPage() {
         setMessage({ text: `${admin.name} を${action}しました`, ok: true });
         load();
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

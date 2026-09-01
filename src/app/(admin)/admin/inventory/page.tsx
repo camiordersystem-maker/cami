@@ -85,7 +85,7 @@ export default function AdminInventoryPage() {
       }
     } catch {
       setSaving(null);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

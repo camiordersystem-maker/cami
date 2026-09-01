@@ -191,7 +191,7 @@ export default function ProductsPage() {
     });
     const json = await res.json().catch(() => null);
     setOrdering(false);
-    if (!res.ok) { setError(apiErrorMessage(json, "エラーが発生しました")); return; }
+    if (!res.ok) { setError(apiErrorMessage(json, "処理を完了できませんでした。もう一度お試しください。")); return; }
     const data = apiData<{ orderId: string }>(json);
     router.push(`/orders/${data.orderId}`);
   }

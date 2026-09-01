@@ -64,11 +64,11 @@ export default function AdminInvoicesPage() {
         setMessage({ text: "請求書を発行しました", ok: true });
         load();
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
       setGenerating(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

@@ -103,7 +103,7 @@ export default function MemberOrderDetailPage() {
       }
     } catch {
       setCancelling(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

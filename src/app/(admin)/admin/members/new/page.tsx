@@ -48,13 +48,13 @@ export default function AdminNewMemberPage() {
       const data = await res.json().catch(() => ({}));
       setSubmitting(false);
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "エラーが発生しました");
+        setError((data as { error?: string }).error ?? "処理を完了できませんでした。もう一度お試しください。");
         return;
       }
       setCreated({ memberId: (data as { memberId: string }).memberId, email: form.email, password: form.password });
     } catch {
       setSubmitting(false);
-      setError("ネットワークエラーが発生しました。再度お試しください。");
+      setError("通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
     }
   }
 

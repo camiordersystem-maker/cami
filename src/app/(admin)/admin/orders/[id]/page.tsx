@@ -64,7 +64,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセルを承認しました", ok: true }); load(); }
-    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+    else setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
   }
 
   async function handleCancelReject() {
@@ -75,7 +75,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセル申込を拒否しました", ok: true }); load(); }
-    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+    else setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
   }
 
   async function load() {
@@ -116,7 +116,7 @@ export default function AdminOrderDetailPage() {
       setMessage({ text: "更新しました", ok: true });
       load();
     } else {
-      setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+      setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
     }
   }
 

@@ -42,7 +42,9 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("member password PATCH error:", e);
+    console.error("member_password_patch_failed", {
+      errorType: e instanceof Error ? e.name : "UnknownError",
+    });
     return NextResponse.json({ error: "パスワードの変更に失敗しました" }, { status: 500 });
   }
 }

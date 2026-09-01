@@ -61,11 +61,11 @@ export default function AddressesPage() {
         load();
       } else {
         const d = await res.json().catch(() => ({}));
-        setError((d as { error?: string }).error ?? "エラーが発生しました");
+        setError((d as { error?: string }).error ?? "処理を完了できませんでした。もう一度お試しください。");
       }
     } catch {
       setSaving(false);
-      setError("ネットワークエラーが発生しました。再度お試しください。");
+      setError("通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
     }
   }
 
