@@ -56,13 +56,17 @@ export default function NotificationBanner() {
           {n.orderId && (
             <Link
               href={`/orders/${n.orderId}`}
-              className="ml-2 text-amber-700 underline shrink-0 font-medium"
+              className="ml-2 inline-flex min-h-11 items-center text-amber-700 underline shrink-0 font-medium"
             >
               確認する →
             </Link>
           )}
         </div>
-        <button onClick={markAllRead} className="text-amber-600 hover:text-amber-800 text-lg shrink-0 leading-none">
+        <button
+          onClick={markAllRead}
+          aria-label="通知をすべて既読にする"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-amber-600 hover:bg-amber-100 hover:text-amber-800 text-lg shrink-0 leading-none"
+        >
           ✕
         </button>
       </div>
@@ -76,7 +80,10 @@ export default function NotificationBanner() {
     <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-6">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-amber-800">🔔 {notifications.length}件の通知があります</span>
-        <button onClick={markAllRead} className="text-amber-600 hover:text-amber-800 text-sm">
+        <button
+          onClick={markAllRead}
+          className="inline-flex min-h-11 items-center rounded-lg px-3 -mr-3 text-amber-600 hover:bg-amber-100 hover:text-amber-800 text-sm"
+        >
           すべて既読にする ✕
         </button>
       </div>
@@ -86,7 +93,7 @@ export default function NotificationBanner() {
             <span>{TYPE_ICON[n.type] ?? "🔔"}</span>
             <span>{n.message}</span>
             {n.orderId && (
-              <Link href={`/orders/${n.orderId}`} className="text-amber-600 underline text-xs">
+              <Link href={`/orders/${n.orderId}`} className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-amber-600 underline text-xs">
                 確認 →
               </Link>
             )}
@@ -94,7 +101,10 @@ export default function NotificationBanner() {
         ))}
       </ul>
       {hiddenCount > 0 && (
-        <button onClick={() => setExpanded(true)} className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline">
+        <button
+          onClick={() => setExpanded(true)}
+          className="mt-1 inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-amber-600 hover:bg-amber-100 hover:text-amber-800 underline"
+        >
           他{hiddenCount}件を表示
         </button>
       )}

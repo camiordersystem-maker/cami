@@ -133,7 +133,7 @@ export default function MemberLayout({
           aria-expanded={mobileMenuOpen}
           aria-controls="member-mobile-navigation"
           onClick={() => setMobileMenuOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-700 text-white"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-700 text-white"
         >
           <span aria-hidden="true" className="text-xl leading-none">
             {mobileMenuOpen ? "×" : "☰"}
@@ -175,7 +175,7 @@ export default function MemberLayout({
                 type="button"
                 aria-label="メニューを閉じる"
                 onClick={() => setMobileMenuOpen(false)}
-                className="h-10 w-10 rounded-lg text-xl text-blue-100 hover:bg-blue-800"
+                className="h-11 w-11 rounded-lg text-xl text-blue-100 hover:bg-blue-800"
               >
                 ×
               </button>

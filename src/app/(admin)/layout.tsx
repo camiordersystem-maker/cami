@@ -135,7 +135,7 @@ export default function AdminLayout({
           aria-expanded={mobileMenuOpen}
           aria-controls="admin-mobile-navigation"
           onClick={() => setMobileMenuOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700 text-white"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-700 text-white"
         >
           <span aria-hidden="true" className="text-xl leading-none">
             {mobileMenuOpen ? "×" : "☰"}
@@ -177,7 +177,7 @@ export default function AdminLayout({
                 type="button"
                 aria-label="メニューを閉じる"
                 onClick={() => setMobileMenuOpen(false)}
-                className="h-10 w-10 rounded-lg text-xl text-slate-200 hover:bg-slate-800"
+                className="h-11 w-11 rounded-lg text-xl text-slate-200 hover:bg-slate-800"
               >
                 ×
               </button>
