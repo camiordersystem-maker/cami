@@ -130,7 +130,8 @@ export default function AdminAdministratorsPage() {
   if (myAdminRole !== "superadmin") {
     return (
       <div className="py-20 text-center text-slate-500">
-        この画面はスーパー管理者のみアクセスできます
+        <h1 className="text-xl font-bold text-slate-900">管理者設定</h1>
+        <p className="mt-3 text-sm text-slate-500">この画面はスーパー管理者のみアクセスできます</p>
       </div>
     );
   }
@@ -144,12 +145,12 @@ export default function AdminAdministratorsPage() {
           <p className="text-slate-500 text-sm mt-1">本部ユーザーの登録・権限管理</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/admin/audit-logs?targetType=admin" className="text-xs text-slate-400 hover:text-slate-600 hover:underline">
+          <Link href="/admin/audit-logs?targetType=admin" className="inline-flex min-h-11 items-center text-xs text-slate-400 hover:text-slate-600 hover:underline">
             変更履歴を見る
           </Link>
           <button
             onClick={openCreate}
-            className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="min-h-11 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             + 管理者を追加
           </button>
@@ -221,11 +222,11 @@ export default function AdminAdministratorsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+                className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
               >
                 {saving ? "保存中..." : (editing ? "更新する" : "登録する")}
               </button>
-              <button type="button" onClick={cancelForm} className="text-slate-600 px-4 py-2 text-sm">
+              <button type="button" onClick={cancelForm} className="min-h-11 text-slate-600 px-4 py-2 text-sm">
                 キャンセル
               </button>
             </div>
@@ -264,14 +265,14 @@ export default function AdminAdministratorsPage() {
                   </span>
                   <button
                     onClick={() => openEdit(admin)}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-sm text-blue-600 hover:underline"
                   >
                     編集
                   </button>
                   {admin.id !== myId && (
                     <button
                       onClick={() => toggleActive(admin)}
-                      className={`text-sm hover:underline ${admin.isActive ? "text-red-500" : "text-green-600"}`}
+                      className={`inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-sm hover:underline ${admin.isActive ? "text-red-500" : "text-green-600"}`}
                     >
                       {admin.isActive ? "無効化" : "有効化"}
                     </button>

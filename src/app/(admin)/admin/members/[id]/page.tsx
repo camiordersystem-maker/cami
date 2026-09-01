@@ -165,10 +165,10 @@ export default function AdminMemberDetailPage() {
     <div>
       {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
+        <Link href="/admin/members" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{member.companyName}</span>
-        <Link href={`/admin/audit-logs?targetType=member&targetId=${id}`} className="ml-auto text-xs text-slate-400 hover:text-slate-600 hover:underline">
+        <Link href={`/admin/audit-logs?targetType=member&targetId=${id}`} className="ml-auto inline-flex min-h-11 items-center text-xs text-slate-400 hover:text-slate-600 hover:underline">
           変更履歴を見る
         </Link>
       </div>
@@ -199,7 +199,7 @@ export default function AdminMemberDetailPage() {
               {!isViewer && !editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
-                  className="text-xs text-blue-600 hover:underline"
+                  className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-blue-600 hover:underline"
                 >
                   編集
                 </button>
@@ -229,14 +229,14 @@ export default function AdminMemberDetailPage() {
                   <button
                     type="submit"
                     disabled={savingInfo}
-                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
                   >
                     {savingInfo ? "保存中..." : "保存"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingInfo(false)}
-                    className="px-3 py-1.5 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
+                    className="min-h-11 px-3 py-1.5 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
                   >
                     キャンセル
                   </button>

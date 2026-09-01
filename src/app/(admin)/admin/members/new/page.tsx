@@ -82,13 +82,13 @@ export default function AdminNewMemberPage() {
           <div className="flex gap-3">
             <Link
               href={`/admin/members/${created.memberId}`}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors"
+              className="inline-flex min-h-11 items-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors"
             >
               店舗詳細を見る
             </Link>
             <Link
               href="/admin/members"
-              className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+              className="inline-flex min-h-11 items-center px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
             >
               会員一覧へ
             </Link>
@@ -101,7 +101,7 @@ export default function AdminNewMemberPage() {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">
+        <Link href="/admin/members" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">
           ← 会員一覧
         </Link>
         <span className="text-slate-300">/</span>
@@ -245,7 +245,7 @@ export default function AdminNewMemberPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            className="min-h-11 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {submitting ? "登録中..." : "店舗アカウントを作成する"}
           </button>

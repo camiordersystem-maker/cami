@@ -157,16 +157,16 @@ export default function AdminOrderDetailPage() {
     <div>
       {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/orders" className="text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
+        <Link href="/admin/orders" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{order.orderNo}</span>
         <div className="ml-auto flex items-center gap-3">
-          <Link href={`/admin/audit-logs?targetType=order&targetId=${order.id}`} className="text-xs text-slate-400 hover:text-slate-600 hover:underline">
+          <Link href={`/admin/audit-logs?targetType=order&targetId=${order.id}`} className="inline-flex min-h-11 items-center text-xs text-slate-400 hover:text-slate-600 hover:underline">
             変更履歴を見る
           </Link>
           <Link
             href={`/admin/orders/${order.id}/delivery-note`}
-            className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
+            className="inline-flex min-h-11 items-center text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
           >
             納品書を印刷
           </Link>

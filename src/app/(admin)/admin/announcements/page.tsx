@@ -204,7 +204,7 @@ export default function AdminAnnouncementsPage() {
                 {!isViewer && (
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="text-xs text-red-500 hover:text-red-700 shrink-0 px-2 py-1 rounded hover:bg-red-50"
+                    className="min-h-11 text-xs text-red-500 hover:text-red-700 shrink-0 px-3 py-1 rounded hover:bg-red-50"
                   >
                     削除
                   </button>

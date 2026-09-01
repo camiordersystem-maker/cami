@@ -427,7 +427,8 @@ export default function ProductsPage() {
                   <div className="ml-6 flex items-center gap-2">
                     <button
                       onClick={() => updateQty(p.id, (quantities[p.id] ?? 0) - 1)}
-                      className="w-8 h-8 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
+                      aria-label={`${p.name}を1箱減らす`}
+                      className="w-11 h-11 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
                     >
                       −
                     </button>
@@ -438,12 +439,14 @@ export default function ProductsPage() {
                       value={quantities[p.id] ?? 0}
                       onChange={(e) => updateQty(p.id, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
                       onFocus={(e) => e.target.select()}
-                      className="w-14 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`${p.name}の注文箱数`}
+                      className="w-16 h-11 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                       onClick={() => updateQty(p.id, (quantities[p.id] ?? 0) + 1)}
                       disabled={(quantities[p.id] ?? 0) >= p.availableBoxes}
-                      className="w-8 h-8 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center font-bold"
+                      aria-label={`${p.name}を1箱増やす`}
+                      className="w-11 h-11 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center font-bold"
                     >
                       ＋
                     </button>
@@ -472,7 +475,7 @@ export default function ProductsPage() {
             <div className="mb-4">
               <label className="block text-xs font-medium text-slate-700 mb-1.5">配送先</label>
               {addresses.length === 0 ? (
-                <a href="/addresses" className="text-sm text-blue-600 hover:underline">
+                <a href="/addresses" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
                   配送先を追加してください →
                 </a>
               ) : (

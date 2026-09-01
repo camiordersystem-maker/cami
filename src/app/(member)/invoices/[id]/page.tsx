@@ -74,7 +74,7 @@ export default function MemberInvoiceDetailPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-end no-print">
-        <button onClick={() => window.print()} className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors">
+        <button onClick={() => window.print()} className="min-h-11 text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors">
           印刷 / PDF保存
         </button>
       </div>

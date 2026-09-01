@@ -101,7 +101,7 @@ function resolveDb(): ReturnType<typeof createDb> {
 }
 
 export const db = new Proxy({} as ReturnType<typeof createDb>, {
-  get(_target, prop, _receiver) {
+  get(_target, prop) {
     const instance = resolveDb() as unknown as Record<PropertyKey, unknown>;
     const value = Reflect.get(instance, prop, instance);
     return typeof value === "function" ? value.bind(instance) : value;

@@ -102,7 +102,8 @@ export default function AdminAuditLogsPage() {
   if (myAdminRole !== "superadmin") {
     return (
       <div className="py-20 text-center text-slate-500">
-        この画面はスーパー管理者のみアクセスできます
+        <h1 className="text-xl font-bold text-slate-900">監査ログ</h1>
+        <p className="mt-3 text-sm text-slate-500">この画面はスーパー管理者のみアクセスできます</p>
       </div>
     );
   }

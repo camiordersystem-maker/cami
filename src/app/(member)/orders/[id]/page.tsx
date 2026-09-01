@@ -125,7 +125,7 @@ export default function MemberOrderDetailPage() {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/orders" className="text-slate-500 hover:text-slate-700 text-sm">
+        <Link href="/orders" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">
           ← 注文履歴
         </Link>
         <span className="text-slate-300">/</span>
@@ -158,19 +158,19 @@ export default function MemberOrderDetailPage() {
             {ORDER_STATUS_LABEL[order.status]}
           </span>
           {(order.status === "confirmed" || order.status === "shipped" || order.status === "delivered") && (
-            <Link href={`/orders/${order.id}/invoice`} className="text-sm text-blue-600 hover:underline font-medium">
+            <Link href={`/orders/${order.id}/invoice`} className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline font-medium">
               請求書を見る
             </Link>
           )}
           {quickReorderEnabled && (
-            <Link href={`/products?reorder=${order.id}`} className="text-sm text-green-600 hover:underline font-medium">
+            <Link href={`/products?reorder=${order.id}`} className="inline-flex min-h-11 items-center text-sm text-green-600 hover:underline font-medium">
               再注文する
             </Link>
           )}
           {canRequestCancel && !isCancelRequested && (
             <button
               onClick={() => setShowCancelForm(!showCancelForm)}
-              className="text-sm text-red-600 hover:underline"
+              className="inline-flex min-h-11 items-center text-sm text-red-600 hover:underline"
             >
               キャンセルを申し込む
             </button>

@@ -106,7 +106,7 @@ export default function AddressesPage() {
         </div>
         <button
           onClick={() => { setShowForm(!showForm); setError(""); setMessage(""); }}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
         >
           + 配送先を追加
         </button>
@@ -155,14 +155,14 @@ export default function AddressesPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
               >
                 {saving ? "保存中..." : "保存する"}
               </button>
               <button
                 type="button"
                 onClick={() => { setShowForm(false); setError(""); }}
-                className="text-slate-600 hover:text-slate-800 px-4 py-2 text-sm"
+                className="min-h-11 text-slate-600 hover:text-slate-800 px-4 py-2 text-sm"
               >
                 キャンセル
               </button>
@@ -208,14 +208,14 @@ export default function AddressesPage() {
                 {!addr.isDefault && (
                   <button
                     onClick={() => handleSetDefault(addr.id)}
-                    className="text-xs text-blue-600 hover:underline"
+                    className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-blue-600 hover:underline"
                   >
                     デフォルトに設定
                   </button>
                 )}
                 <button
                   onClick={() => handleDelete(addr.id)}
-                  className="text-xs text-red-500 hover:underline"
+                  className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-red-500 hover:underline"
                 >
                   削除
                 </button>
