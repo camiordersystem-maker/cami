@@ -5,9 +5,9 @@ import * as schema from "@/lib/db/schema";
 import { eq, desc, and, gte, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { generateOrderNo, TAX_RATE } from "@/lib/utils";
-import { sendOrderConfirmation } from "@/lib/email";
 import { conflict, forbidden, internalError, notFound, ok, unauthorized, validationError } from "@/lib/api-response";
 import { isPostgresRuntime } from "@/lib/env";
+import { sendOrderPostCommitNotifications } from "@/lib/orders/post-commit-notifications";
 
 const orderItemSchema = z.object({
   productId: z.string(),
@@ -287,16 +287,26 @@ export async function POST(req: NextRequest) {
     });
 
     if (!order.isDuplicate) {
-      try {
-        await sendOrderConfirmation({
+      await sendOrderPostCommitNotifications({
+        isDuplicate: false,
+        email: {
           to: member.email,
           companyName: member.companyName,
           orderNo: order.orderNo,
           total: order.total,
-        });
-      } catch (e) {
-        console.error("Order confirmation email failed:", e);
-      }
+        },
+        line: {
+          orderId: order.id,
+          orderNo: order.orderNo,
+          memberCompanyName: member.companyName,
+          items: orderItemValues.map((item) => ({
+            productName: item.productName,
+            boxes: item.boxes,
+          })),
+          total: order.total,
+          createdAt: order.createdAt,
+        },
+      });
     }
 
     return ok({ orderId: order.id, orderNo: order.orderNo }, "注文を作成しました", { status: 201 });

@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "tsx src/lib/__tests__/business-rules.test.ts",
+    "test": "tsx src/lib/__tests__/business-rules.test.ts && tsx src/lib/__tests__/line-order-notification.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx src/lib/db/migrate.ts",
     "db:migrate:pg": "npx tsx src/lib/db/migrate.pg.ts",
