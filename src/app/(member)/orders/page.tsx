@@ -87,14 +87,14 @@ export default async function MemberOrdersPage() {
                   <div className="sm:text-right flex sm:flex-col gap-2 sm:gap-1 sm:items-end">
                     <Link
                       href={`/orders/${order.id}`}
-                      className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-blue-600 hover:underline"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 text-xs text-blue-600 hover:underline"
                     >
                       詳細
                     </Link>
                     {(order.status === "confirmed" || order.status === "shipped" || order.status === "delivered") && (
                       <Link
                         href={`/orders/${order.id}/invoice`}
-                        className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-slate-500 hover:underline"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 text-xs text-slate-500 hover:underline"
                       >
                         請求書
                       </Link>
@@ -102,7 +102,7 @@ export default async function MemberOrdersPage() {
                     {quickReorderEnabled && (
                       <Link
                         href={`/products?reorder=${order.id}`}
-                        className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-green-600 hover:underline"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 text-xs text-green-600 hover:underline"
                       >
                         再注文
                       </Link>

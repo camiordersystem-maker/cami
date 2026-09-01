@@ -208,14 +208,14 @@ export default function AddressesPage() {
                 {!addr.isDefault && (
                   <button
                     onClick={() => handleSetDefault(addr.id)}
-                    className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-blue-600 hover:underline"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 text-xs text-blue-600 hover:underline"
                   >
                     デフォルトに設定
                   </button>
                 )}
                 <button
                   onClick={() => handleDelete(addr.id)}
-                  className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-red-500 hover:underline"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-3 text-xs text-red-500 hover:underline"
                 >
                   削除
                 </button>

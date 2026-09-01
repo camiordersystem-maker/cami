@@ -62,7 +62,7 @@ export default function MemberLayout({
             key={item.href}
             href={item.href}
             onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
+            className={`flex min-h-11 items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium mb-1 transition-colors ${
               active
                 ? "bg-blue-700 text-white"
                 : "text-blue-200 hover:bg-blue-800 hover:text-white"
@@ -97,7 +97,7 @@ export default function MemberLayout({
       <button
         type="button"
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="w-full rounded-lg border border-blue-700 px-3 py-2 text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
+        className="w-full min-h-11 rounded-lg border border-blue-700 px-3 py-2 text-sm font-medium text-blue-100 hover:bg-blue-800 hover:text-white transition-colors"
       >
         ログアウト
       </button>

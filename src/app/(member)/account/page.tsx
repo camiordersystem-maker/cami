@@ -92,7 +92,7 @@ export default function AccountPage() {
               required
               value={form.currentPassword}
               onChange={(e) => update("currentPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="current-password"
             />
           </div>
@@ -111,7 +111,7 @@ export default function AccountPage() {
               minLength={8}
               value={form.newPassword}
               onChange={(e) => update("newPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="new-password"
               placeholder="8文字以上"
             />
@@ -131,7 +131,7 @@ export default function AccountPage() {
               minLength={8}
               value={form.confirmPassword}
               onChange={(e) => update("confirmPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="new-password"
             />
           </div>
@@ -139,7 +139,7 @@ export default function AccountPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            className="min-h-11 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {saving ? "変更中..." : "パスワードを変更する"}
           </button>
