@@ -86,7 +86,7 @@ export default function AdminFeatureFlagsPage() {
               <div className="font-medium text-slate-900">{flag.label}</div>
               <div className="text-sm text-slate-500 mt-0.5">{flag.description}</div>
             </div>
-            <label className="flex items-center gap-2 shrink-0 cursor-pointer">
+            <label className="flex min-h-11 items-center gap-2 shrink-0 cursor-pointer rounded-lg px-2 -mx-2">
               <input
                 type="checkbox"
                 checked={flag.enabled}
