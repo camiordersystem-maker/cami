@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/api/register",
   "/api/health",
   "/api/readiness",
+  "/api/webhooks/line",
   "/_next",
   "/favicon.ico",
   "/cami-logo.png",
