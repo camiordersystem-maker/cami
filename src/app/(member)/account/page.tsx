@@ -79,10 +79,15 @@ export default function AccountPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="current-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               現在のパスワード <span className="text-red-500">*</span>
             </label>
             <input
+              id="current-password"
+              name="currentPassword"
               type="password"
               required
               value={form.currentPassword}
@@ -92,10 +97,15 @@ export default function AccountPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="new-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               新しいパスワード <span className="text-red-500">*</span>
             </label>
             <input
+              id="new-password"
+              name="newPassword"
               type="password"
               required
               minLength={8}
@@ -107,10 +117,15 @@ export default function AccountPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="confirm-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               新しいパスワード（確認） <span className="text-red-500">*</span>
             </label>
             <input
+              id="confirm-password"
+              name="confirmPassword"
               type="password"
               required
               minLength={8}

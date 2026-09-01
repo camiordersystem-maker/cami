@@ -181,7 +181,7 @@ export default function MemberLayout({
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto py-4 px-3">
+            <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3">
               {navContent}
             </nav>
 
@@ -207,7 +207,7 @@ export default function MemberLayout({
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3">
           {navContent}
         </nav>
 
