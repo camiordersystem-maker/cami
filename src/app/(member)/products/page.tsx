@@ -482,7 +482,7 @@ export default function ProductsPage() {
                 <select
                   value={selectedAddress}
                   onChange={(e) => setSelectedAddress(e.target.value)}
-                  className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-11 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">配送先を選択</option>
                   {addresses.map((a) => (
@@ -526,7 +526,7 @@ export default function ProductsPage() {
             <button
               onClick={goToConfirm}
               disabled={cartTotal === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+              className="w-full min-h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
             >
               注文内容を確認する
             </button>
