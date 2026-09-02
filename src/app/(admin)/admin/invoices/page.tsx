@@ -98,7 +98,7 @@ export default function AdminInvoicesPage() {
               aria-label="会員"
               value={form.memberId}
               onChange={(e) => setForm((f) => ({ ...f, memberId: e.target.value }))}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-full sm:w-auto sm:min-w-48"
               required
             >
               <option value="">会員を選択</option>
