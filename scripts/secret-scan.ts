@@ -2,7 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const ignore = new Set(["node_modules", ".next", ".git", "local.db", "local.db-shm", "local.db-wal"]);
+const ignore = new Set([
+  "node_modules",
+  ".next",
+  ".open-next",
+  ".git",
+  "coverage",
+  "dist",
+  "local.db",
+  "local.db-shm",
+  "local.db-wal",
+]);
 const filePattern = /\.(ts|tsx|js|json|md|txt|env|yml|yaml)$/;
 const tokenPatterns = [
   /sk-[A-Za-z0-9_-]{20,}/,

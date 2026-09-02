@@ -103,6 +103,7 @@ export default function AdminAnnouncementsPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">タイトル <span className="text-red-500">*</span></label>
             <input
+              aria-label="タイトル"
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -113,6 +114,7 @@ export default function AdminAnnouncementsPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">本文 <span className="text-red-500">*</span></label>
             <textarea
+              aria-label="本文"
               required
               value={form.body}
               onChange={(e) => setForm({ ...form, body: e.target.value })}
@@ -125,6 +127,7 @@ export default function AdminAnnouncementsPage() {
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">種別</label>
               <select
+                aria-label="種別"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as "all" | "individual" })}
                 className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -137,6 +140,7 @@ export default function AdminAnnouncementsPage() {
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">対象店舗 <span className="text-red-500">*</span></label>
                 <select
+                  aria-label="対象店舗"
                   required
                   value={form.targetMemberId}
                   onChange={(e) => setForm({ ...form, targetMemberId: e.target.value })}
@@ -153,6 +157,7 @@ export default function AdminAnnouncementsPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">有効期限（任意）</label>
             <input
+              aria-label="有効期限（任意）"
               type="datetime-local"
               value={form.expiresAt}
               onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
@@ -199,7 +204,7 @@ export default function AdminAnnouncementsPage() {
                 {!isViewer && (
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="text-xs text-red-500 hover:text-red-700 shrink-0 px-2 py-1 rounded hover:bg-red-50"
+                    className="min-h-11 text-xs text-red-500 hover:text-red-700 shrink-0 px-3 py-1 rounded hover:bg-red-50"
                   >
                     削除
                   </button>

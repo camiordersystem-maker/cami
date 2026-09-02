@@ -39,6 +39,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ url: blob.url });
     }
 
+    // Cloudflare Workersには永続的な書き込み可能ローカルFSがない。
+    // 外部ストレージが未設定の場合、ローカル開発用fallbackへ進ませず
+    // 明示的に利用不可として返す。
+    if (process.env.RUNTIME_TARGET === "cloudflare-workers") {
+      return NextResponse.json(
+        {
+          error: "画像ストレージが未設定です",
+          code: "STORAGE_NOT_CONFIGURED",
+        },
+        { status: 503 }
+      );
+    }
+
     // ローカル開発: public/uploads/ に保存
     const { writeFile } = await import("fs/promises");
     const { join } = await import("path");

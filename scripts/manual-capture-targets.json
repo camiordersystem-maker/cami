@@ -1,0 +1,26 @@
+{
+  "member": [
+    { "path": "/dashboard", "output": "member/dashboard.png" },
+    { "path": "/products", "output": "member/products.png" },
+    { "path": "/orders", "output": "member/orders.png" },
+    { "path": "/addresses", "output": "member/addresses.png" },
+    { "path": "/announcements", "output": "member/announcements.png" },
+    { "path": "/terms", "output": "member/terms.png" },
+    { "path": "/account", "output": "member/account.png" }
+  ],
+  "admin": [
+    { "path": "/admin/dashboard", "output": "admin/dashboard.png" },
+    { "path": "/admin/orders", "output": "admin/orders.png" },
+    { "path": "/admin/invoices", "output": "admin/invoices.png" },
+    { "path": "/admin/members", "output": "admin/members.png" },
+    { "path": "/admin/products", "output": "admin/products.png" },
+    { "path": "/admin/inventory", "output": "admin/inventory.png" },
+    { "path": "/admin/ranks", "output": "admin/ranks.png" },
+    { "path": "/admin/terms", "output": "admin/terms.png" },
+    { "path": "/admin/announcements", "output": "admin/announcements.png" },
+    { "path": "/admin/administrators", "output": "admin/administrators.png" },
+    { "path": "/admin/settings", "output": "admin/settings.png" },
+    { "path": "/admin/feature-flags", "output": "admin/feature-flags.png" },
+    { "path": "/admin/audit-logs", "output": "admin/audit-logs.png" }
+  ]
+}

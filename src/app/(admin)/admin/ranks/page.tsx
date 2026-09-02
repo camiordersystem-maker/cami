@@ -55,11 +55,11 @@ export default function AdminRanksPage() {
         setShowForm(false);
         load();
       } else {
-        setError((data as { error?: string }).error ?? "エラーが発生しました");
+        setError((data as { error?: string }).error ?? "処理を完了できませんでした。もう一度お試しください。");
       }
     } catch {
       setSaving(false);
-      setError("ネットワークエラーが発生しました");
+      setError("通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
     }
   }
 

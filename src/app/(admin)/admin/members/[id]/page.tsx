@@ -108,7 +108,7 @@ export default function AdminMemberDetailPage() {
       }
     } catch {
       setUpdating(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 
@@ -151,7 +151,7 @@ export default function AdminMemberDetailPage() {
       }
     } catch {
       setSavingInfo(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 
@@ -165,17 +165,17 @@ export default function AdminMemberDetailPage() {
     <div>
       {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
+        <Link href="/admin/members" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">← 会員一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{member.companyName}</span>
-        <Link href={`/admin/audit-logs?targetType=member&targetId=${id}`} className="ml-auto text-xs text-slate-400 hover:text-slate-600 hover:underline">
+        <Link href={`/admin/audit-logs?targetType=member&targetId=${id}`} className="ml-auto inline-flex min-h-11 items-center text-xs text-slate-400 hover:text-slate-600 hover:underline">
           変更履歴を見る
         </Link>
       </div>
 
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{member.companyName}</h1>
+        <div className="min-w-0 max-w-full">
+          <h1 className="text-2xl font-bold text-slate-900 break-words">{member.companyName}</h1>
           <p className="text-slate-500 text-sm mt-1">登録日：{formatDate(member.createdAt)}</p>
         </div>
         <span className={`text-sm font-medium px-3 py-1.5 rounded-full ${MEMBER_STATUS_COLOR[member.status]}`}>
@@ -199,7 +199,7 @@ export default function AdminMemberDetailPage() {
               {!isViewer && !editingInfo && (
                 <button
                   onClick={() => setEditingInfo(true)}
-                  className="text-xs text-blue-600 hover:underline"
+                  className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-xs text-blue-600 hover:underline"
                 >
                   編集
                 </button>
@@ -229,14 +229,14 @@ export default function AdminMemberDetailPage() {
                   <button
                     type="submit"
                     disabled={savingInfo}
-                    className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
+                    className="flex-1 min-h-11 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg disabled:opacity-50 transition-colors"
                   >
                     {savingInfo ? "保存中..." : "保存"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingInfo(false)}
-                    className="px-3 py-1.5 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
+                    className="min-h-11 px-3 py-1.5 text-slate-600 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
                   >
                     キャンセル
                   </button>
@@ -266,7 +266,7 @@ export default function AdminMemberDetailPage() {
           <div className="bg-white rounded-xl border border-slate-200 p-5">
             <h2 className="font-semibold text-slate-900 text-sm mb-3">ランク設定</h2>
             <div className="text-xs text-slate-500 mb-2">現在：{member.rank?.name}（{member.rank ? Math.round(member.rank.rate * 100) : "—"}%）</div>
-            <select
+            <select aria-label="会員ランク"
               value={selectedRank}
               onChange={(e) => setSelectedRank(e.target.value)}
               className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -341,7 +341,7 @@ export default function AdminMemberDetailPage() {
               <h2 className="font-semibold text-slate-900 text-sm mb-3">登録配送先</h2>
               <div className="space-y-2">
                 {member.addresses.map((a) => (
-                  <div key={a.id} className="text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2">
+                  <div key={a.id} className="text-sm text-slate-700 bg-slate-50 rounded-lg px-3 py-2 min-w-0 break-words">
                     <span className="font-medium">{a.label}</span>
                     {a.isDefault && <span className="ml-2 text-xs text-blue-600">デフォルト</span>}
                     <div className="text-xs text-slate-500 mt-0.5">{a.prefecture}{a.address1}</div>

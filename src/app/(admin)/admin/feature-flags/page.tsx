@@ -58,7 +58,8 @@ export default function AdminFeatureFlagsPage() {
   if (myAdminRole !== "superadmin") {
     return (
       <div className="py-20 text-center text-slate-500">
-        この画面はスーパー管理者のみアクセスできます
+        <h1 className="text-xl font-bold text-slate-900">機能フラグ</h1>
+        <p className="mt-3 text-sm text-slate-500">この画面はスーパー管理者のみアクセスできます</p>
       </div>
     );
   }
@@ -85,7 +86,7 @@ export default function AdminFeatureFlagsPage() {
               <div className="font-medium text-slate-900">{flag.label}</div>
               <div className="text-sm text-slate-500 mt-0.5">{flag.description}</div>
             </div>
-            <label className="flex items-center gap-2 shrink-0 cursor-pointer">
+            <label className="flex min-h-11 items-center gap-2 shrink-0 cursor-pointer rounded-lg px-2 -mx-2">
               <input
                 type="checkbox"
                 checked={flag.enabled}

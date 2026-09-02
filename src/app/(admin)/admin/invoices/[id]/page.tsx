@@ -129,7 +129,7 @@ export default function AdminInvoiceDetailPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setMessage({ text: apiErrorMessage(d, "エラーが発生しました"), ok: false });
+      setMessage({ text: apiErrorMessage(d, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
     }
   }
 
@@ -193,7 +193,7 @@ export default function AdminInvoiceDetailPage() {
         {/* Header */}
         <div className="flex justify-between items-start mb-10">
           <div>
-            <div className="text-3xl font-bold text-slate-900">請 求 書</div>
+            <h1 className="text-3xl font-bold text-slate-900">請 求 書</h1>
             <div className="text-slate-500 text-sm mt-1">{invoice.year}年{invoice.month}月分</div>
           </div>
           <div className="text-right">

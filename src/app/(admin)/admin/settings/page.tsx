@@ -105,7 +105,7 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className={labelCls}>会社名 <span className="text-red-500">*</span></label>
-              <input
+              <input aria-label="会社名"
                 value={form.companyName}
                 onChange={e => setForm(p => ({ ...p, companyName: e.target.value }))}
                 className={inputCls}
@@ -114,7 +114,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>郵便番号</label>
-              <input
+              <input aria-label="郵便番号"
                 value={form.companyPostalCode}
                 onChange={e => setForm(p => ({ ...p, companyPostalCode: e.target.value }))}
                 className={inputCls}
@@ -123,7 +123,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>電話番号</label>
-              <input
+              <input aria-label="電話番号"
                 value={form.companyTel}
                 onChange={e => setForm(p => ({ ...p, companyTel: e.target.value }))}
                 className={inputCls}
@@ -132,7 +132,7 @@ export default function AdminSettingsPage() {
             </div>
             <div className="md:col-span-2">
               <label className={labelCls}>住所</label>
-              <input
+              <input aria-label="住所"
                 value={form.companyAddress}
                 onChange={e => setForm(p => ({ ...p, companyAddress: e.target.value }))}
                 className={inputCls}
@@ -141,7 +141,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>会社メールアドレス</label>
-              <input
+              <input aria-label="会社メールアドレス"
                 type="email"
                 value={form.companyEmail}
                 onChange={e => setForm(p => ({ ...p, companyEmail: e.target.value }))}
@@ -151,7 +151,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>サポート連絡先メール <span className="text-xs text-slate-400">（店舗向け案内に表示）</span></label>
-              <input
+              <input aria-label="サポート連絡先メール"
                 type="email"
                 value={form.supportEmail}
                 onChange={e => setForm(p => ({ ...p, supportEmail: e.target.value }))}
@@ -168,7 +168,7 @@ export default function AdminSettingsPage() {
           <p className="text-xs text-slate-500 mb-4">登録番号は請求書・納品書に印字されます</p>
           <div className="max-w-sm">
             <label className={labelCls}>適格請求書発行事業者登録番号（T番号）</label>
-            <input
+            <input aria-label="適格請求書発行事業者登録番号"
               value={form.invoiceRegistrationNo}
               onChange={e => setForm(p => ({ ...p, invoiceRegistrationNo: e.target.value }))}
               className={inputCls}
@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
           <h2 className="font-semibold text-slate-900 mb-4">在庫アラート設定</h2>
           <div className="max-w-xs">
             <label className={labelCls}>低在庫アラート閾値（箱数）</label>
-            <input
+            <input aria-label="低在庫アラート閾値（箱数）"
               type="number"
               min={0}
               max={9999}

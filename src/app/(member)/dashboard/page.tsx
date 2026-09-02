@@ -114,7 +114,7 @@ export default async function MemberDashboardPage() {
       <div className="bg-white rounded-xl border border-slate-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">最近の注文</h2>
-          <Link href="/orders" className="text-sm text-blue-600 hover:underline">
+          <Link href="/orders" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
             すべて見る →
           </Link>
         </div>
@@ -156,7 +156,7 @@ export default async function MemberDashboardPage() {
         <div className="mt-6 bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">お知らせ</h2>
-            <Link href="/announcements" className="text-sm text-blue-600 hover:underline">すべて見る →</Link>
+            <Link href="/announcements" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">すべて見る →</Link>
           </div>
           <div className="divide-y divide-slate-100">
             {latestAnnouncements.map((a: (typeof latestAnnouncements)[0]) => (

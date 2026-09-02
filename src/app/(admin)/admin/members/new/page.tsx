@@ -48,13 +48,13 @@ export default function AdminNewMemberPage() {
       const data = await res.json().catch(() => ({}));
       setSubmitting(false);
       if (!res.ok) {
-        setError((data as { error?: string }).error ?? "エラーが発生しました");
+        setError((data as { error?: string }).error ?? "処理を完了できませんでした。もう一度お試しください。");
         return;
       }
       setCreated({ memberId: (data as { memberId: string }).memberId, email: form.email, password: form.password });
     } catch {
       setSubmitting(false);
-      setError("ネットワークエラーが発生しました。再度お試しください。");
+      setError("通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。");
     }
   }
 
@@ -82,13 +82,13 @@ export default function AdminNewMemberPage() {
           <div className="flex gap-3">
             <Link
               href={`/admin/members/${created.memberId}`}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors"
+              className="inline-flex min-h-11 items-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors"
             >
               店舗詳細を見る
             </Link>
             <Link
               href="/admin/members"
-              className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+              className="inline-flex min-h-11 items-center px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-medium transition-colors"
             >
               会員一覧へ
             </Link>
@@ -101,7 +101,7 @@ export default function AdminNewMemberPage() {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/members" className="text-slate-500 hover:text-slate-700 text-sm">
+        <Link href="/admin/members" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">
           ← 会員一覧
         </Link>
         <span className="text-slate-300">/</span>
@@ -123,6 +123,7 @@ export default function AdminNewMemberPage() {
               店舗名 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="店舗名"
               type="text"
               required
               value={form.companyName}
@@ -136,6 +137,7 @@ export default function AdminNewMemberPage() {
               担当者名 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="担当者名"
               type="text"
               required
               value={form.contactName}
@@ -152,6 +154,7 @@ export default function AdminNewMemberPage() {
               メールアドレス <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="メールアドレス"
               type="email"
               required
               value={form.email}
@@ -165,6 +168,7 @@ export default function AdminNewMemberPage() {
               初期パスワード <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="初期パスワード"
               type="text"
               required
               minLength={8}
@@ -182,6 +186,7 @@ export default function AdminNewMemberPage() {
               電話番号 <span className="text-red-500">*</span>
             </label>
             <input
+              aria-label="電話番号"
               type="tel"
               required
               value={form.phone}
@@ -193,6 +198,7 @@ export default function AdminNewMemberPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">ランク</label>
             <select
+              aria-label="ランク"
               value={form.rankId}
               onChange={(e) => update("rankId", e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -211,6 +217,7 @@ export default function AdminNewMemberPage() {
             住所 <span className="text-red-500">*</span>
           </label>
           <input
+            aria-label="住所"
             type="text"
             required
             value={form.address}
@@ -225,6 +232,7 @@ export default function AdminNewMemberPage() {
             事業概要（任意）
           </label>
           <textarea
+            aria-label="事業概要（任意）"
             value={form.businessDescription}
             onChange={(e) => update("businessDescription", e.target.value)}
             rows={3}
@@ -237,7 +245,7 @@ export default function AdminNewMemberPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            className="min-h-11 px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {submitting ? "登録中..." : "店舗アカウントを作成する"}
           </button>
