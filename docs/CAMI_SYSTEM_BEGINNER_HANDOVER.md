@@ -1,5 +1,7 @@
 # Cami受発注システム 完全引き継ぎ書（初心者向け）
 
+> **Legacy handover note:** この文書は2026-07-03時点のローカル引き継ぎ履歴です。branch、version、Production readiness等は現状と異なります。現在情報は`docs/README.md`配下を優先してください。
+
 作成日: 2026-07-03
 対象プロジェクト: /Users/hiroshikento/cami-order-system
 作業ブランチ: codex/local-complete-and-handover

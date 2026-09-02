@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getContextHelpHref } from "@/lib/manual-routes";
 
 const baseNavItems = [
   { href: "/admin/dashboard", label: "ダッシュボード" },
@@ -16,6 +17,7 @@ const baseNavItems = [
   { href: "/admin/ranks", label: "ランク管理" },
   { href: "/admin/terms", label: "約款管理" },
   { href: "/admin/announcements", label: "お知らせ管理" },
+  { href: "/admin/help", label: "ヘルプ・マニュアル" },
 ];
 
 const superAdminNavItems = [
@@ -34,6 +36,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const contextHelpHref = getContextHelpHref("admin", pathname);
 
   const adminRole =
     (session?.user as { adminRole?: string })?.adminRole;
@@ -78,11 +81,11 @@ export default function AdminLayout({
 
   const accountFooter = (
     <div className="shrink-0 px-4 py-4 border-t border-slate-700 bg-slate-900">
-      <div className="text-xs text-slate-300 font-medium truncate mb-0.5">
+      <div data-manual-mask className="text-xs text-slate-300 font-medium truncate mb-0.5">
         {session?.user?.name}
       </div>
 
-      <div className="text-xs text-slate-500 truncate mb-1">
+      <div data-manual-mask className="text-xs text-slate-500 truncate mb-1">
         {session?.user?.email}
       </div>
 
@@ -226,6 +229,16 @@ export default function AdminLayout({
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 min-w-0 p-4 md:p-8">
+          {contextHelpHref && (
+            <div className="mb-3 flex justify-end">
+              <Link
+                href={contextHelpHref}
+                className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                ？ この画面の使い方
+              </Link>
+            </div>
+          )}
           {children}
         </main>
       </div>

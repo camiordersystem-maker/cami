@@ -1,5 +1,7 @@
 # Cloudflare Production Migration Runbook
 
+> **Current-state note (2026-09-02 / RC2):** Cloudflare Production Workerへのapplication releaseは完了済みです。この文書は移行準備時の履歴runbookを含みます。将来releaseは`PRODUCTION_RELEASE.md`、domain cutoverは`ENVIRONMENTS_AND_RELEASE.md`を優先してください。
+
 ## 重要
 
 このRunbookを作成した時点では、

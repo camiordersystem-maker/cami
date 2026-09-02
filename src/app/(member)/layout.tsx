@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import NotificationBanner from "@/components/member/NotificationBanner";
 import { useEffect, useState } from "react";
+import { getContextHelpHref } from "@/lib/manual-routes";
 
 const baseNavItems = [
   { href: "/dashboard", label: "ダッシュボード" },
@@ -15,6 +16,7 @@ const baseNavItems = [
   { href: "/announcements", label: "お知らせ" },
   { href: "/terms", label: "契約書" },
   { href: "/account", label: "アカウント設定" },
+  { href: "/help", label: "ヘルプ・マニュアル" },
 ];
 
 export default function MemberLayout({
@@ -27,6 +29,7 @@ export default function MemberLayout({
 
   const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const contextHelpHref = getContextHelpHref("member", pathname);
 
   useEffect(() => {
     fetch("/api/announcements")
@@ -86,11 +89,11 @@ export default function MemberLayout({
 
   const accountFooter = (
     <div className="shrink-0 px-4 py-4 border-t border-blue-800 bg-blue-900">
-      <div className="text-xs text-blue-200 font-medium truncate mb-0.5">
+      <div data-manual-mask className="text-xs text-blue-200 font-medium truncate mb-0.5">
         {session?.user?.name}
       </div>
 
-      <div className="text-xs text-blue-400 truncate mb-3">
+      <div data-manual-mask className="text-xs text-blue-400 truncate mb-3">
         {session?.user?.email}
       </div>
 
@@ -225,6 +228,16 @@ export default function MemberLayout({
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 min-w-0 p-4 md:p-8">
           <NotificationBanner />
+          {contextHelpHref && (
+            <div className="mb-3 flex justify-end">
+              <Link
+                href={contextHelpHref}
+                className="inline-flex min-h-11 items-center rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              >
+                ？ この画面の使い方
+              </Link>
+            </div>
+          )}
           {children}
         </main>
       </div>

@@ -1,5 +1,7 @@
 # Cloudflare Production 環境変数
 
+> **Current-state note (2026-09-02 / RC2):** Production application entrypointは現在workers.devです。独自ドメインは別工程です。secret値は引き続き本書へ記録しません。
+
 ## 方針
 
 Secret値そのものはGitへ保存しない。

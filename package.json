@@ -39,8 +39,10 @@
     "local:restore": "tsx scripts/local-restore.ts",
     "local:smoke": "tsx scripts/local-smoke.ts",
     "scan:secrets": "tsx scripts/secret-scan.ts",
-    "docs:generate": "tsx scripts/generate-handover-docs.ts",
-    "local:migrate": "tsx scripts/local-migrate.ts"
+    "docs:generate": "node scripts/generate-handover-docs.mjs",
+    "local:migrate": "tsx scripts/local-migrate.ts",
+    "docs:check": "node scripts/check-documentation.mjs",
+    "manual:capture": "node scripts/capture-manual-screenshots.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
