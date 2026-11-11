@@ -74,6 +74,31 @@ async function testEnvAndDisabledSkip() {
   assert.deepEqual(missing, { status: "skipped", reason: "missing_env" });
 }
 
+async function testMalformedWebhookEvents() {
+  restore();
+  process.env.LINE_CHANNEL_SECRET = "test-channel-secret";
+  process.env.LINE_GROUP_SETUP_TOKEN = "fixture-setup";
+  for (const events of [[null], [1], ["message"], [{}]]) {
+    const body = JSON.stringify({ events });
+    const signature = await createLineSignature(body, process.env.LINE_CHANNEL_SECRET);
+    const response = await lineWebhookPost(new NextRequest("https://example.test/api/webhooks/line", {
+      method: "POST", body, headers: { "x-line-signature": signature },
+    }));
+    assert.equal(response.status, 400);
+  }
+  for (const event of [
+    { type: "message", source: { type: "group", groupId: "fixture" }, message: null },
+    { type: "message", source: { type: "group", groupId: 123 }, message: { type: "text", text: "#cami-setup fixture-setup" } },
+  ]) {
+    const body = JSON.stringify({ events: [event] });
+    const signature = await createLineSignature(body, process.env.LINE_CHANNEL_SECRET);
+    const response = await lineWebhookPost(new NextRequest("https://example.test/api/webhooks/line", {
+      method: "POST", body, headers: { "x-line-signature": signature },
+    }));
+    assert.equal(response.status, 200);
+  }
+}
+
 async function testMessageAndRetryKey() {
   restore();
   process.env.NEXT_PUBLIC_SITE_URL = "https://cami-order-system-production.cami-order-system.workers.dev";
@@ -186,6 +211,7 @@ async function testTimeoutAndLogSafety() {
 
 async function main() {
   await testSignature();
+  await testMalformedWebhookEvents();
   await testEnvAndDisabledSkip();
   await testMessageAndRetryKey();
   await testRetryAndFailureIsolation();

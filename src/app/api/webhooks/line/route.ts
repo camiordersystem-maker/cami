@@ -7,7 +7,12 @@ export const runtime = "nodejs";
 function isLineWebhookPayload(value: unknown): value is LineWebhookPayload {
   if (!value || typeof value !== "object") return false;
   const payload = value as { events?: unknown };
-  return payload.events === undefined || Array.isArray(payload.events);
+  return payload.events === undefined || (
+    Array.isArray(payload.events) && payload.events.every((event: unknown) => (
+      !!event && typeof event === "object" &&
+      typeof (event as { type?: unknown }).type === "string"
+    ))
+  );
 }
 
 function maskGroupId(groupId: string): string {
@@ -23,7 +28,9 @@ function isTextMessageGroupEvent(event: LineWebhookEvent): event is {
   return (
     event.type === "message" &&
     event.source?.type === "group" &&
+    typeof event.source.groupId === "string" &&
     "message" in event &&
+    !!event.message && typeof event.message === "object" &&
     event.message.type === "text" &&
     typeof event.message.text === "string"
   );

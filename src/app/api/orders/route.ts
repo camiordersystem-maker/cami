@@ -8,6 +8,7 @@ import { generateOrderNo, TAX_RATE } from "@/lib/utils";
 import { conflict, forbidden, internalError, notFound, ok, unauthorized, validationError } from "@/lib/api-response";
 import { isPostgresRuntime } from "@/lib/env";
 import { sendOrderPostCommitNotifications } from "@/lib/orders/post-commit-notifications";
+import { changeInventory } from "@/lib/inventory";
 
 const orderItemSchema = z.object({
   productId: z.string(),
@@ -220,45 +221,15 @@ export async function POST(req: NextRequest) {
       );
 
       for (const item of items) {
-        const [currentInventory] = await tx
-          .select({
-            id: schema.inventory.id,
-            availableBoxes: schema.inventory.availableBoxes,
-          })
-          .from(schema.inventory)
-          .where(eq(schema.inventory.productId, item.productId));
-
-        if (!currentInventory || currentInventory.availableBoxes < item.boxes) {
-          throw new Error("INSUFFICIENT_STOCK");
-        }
-
-        const afterBoxes = currentInventory.availableBoxes - item.boxes;
-        const updated = await tx
-          .update(schema.inventory)
-          .set({
-            availableBoxes: afterBoxes,
-            updatedAt: new Date(),
-            updatedBy: memberId,
-          })
-          .where(
-            and(
-              eq(schema.inventory.productId, item.productId),
-              gte(schema.inventory.availableBoxes, item.boxes)
-            )
-          )
-          .returning({ id: schema.inventory.id });
-
-        if (updated.length === 0) {
-          throw new Error("INVENTORY_CONFLICT");
-        }
+        const stock = await changeInventory(tx, item.productId, -item.boxes, memberId);
 
         await tx.insert(schema.inventoryMovements).values({
           productId: item.productId,
           orderId: created.id,
           movementType: "order_allocation",
           quantityDelta: -item.boxes,
-          quantityBefore: currentInventory.availableBoxes,
-          quantityAfter: afterBoxes,
+          quantityBefore: stock.before,
+          quantityAfter: stock.after,
           reason: "注文作成",
           actorId: memberId,
           actorRole: "member",
