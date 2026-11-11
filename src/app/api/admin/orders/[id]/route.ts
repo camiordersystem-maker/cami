@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { changeInventory } from "@/lib/inventory";
 import { z } from "zod";
 import { requireEditor } from "@/lib/admin-auth";
 import { canTransitionOrder, requiresCancelReason, requiresTrackingNumber } from "@/lib/order-status";
@@ -132,26 +133,14 @@ export async function PATCH(
             .where(eq(schema.orderItems.orderId, id));
 
           for (const item of items) {
-            const [currentInventory] = await tx
-              .select({ availableBoxes: schema.inventory.availableBoxes })
-              .from(schema.inventory)
-              .where(eq(schema.inventory.productId, item.productId));
-            if (!currentInventory) throw new Error("INVENTORY_NOT_FOUND");
-            await tx
-              .update(schema.inventory)
-              .set({
-                availableBoxes: sql`${schema.inventory.availableBoxes} + ${item.boxes}`,
-                updatedAt: new Date(),
-                updatedBy: session!.user.id,
-              })
-              .where(eq(schema.inventory.productId, item.productId));
+            const stock = await changeInventory(tx, item.productId, item.boxes, session!.user.id);
             await tx.insert(schema.inventoryMovements).values({
               productId: item.productId,
               orderId: id,
               movementType: "cancellation_return",
               quantityDelta: item.boxes,
-              quantityBefore: currentInventory.availableBoxes,
-              quantityAfter: currentInventory.availableBoxes + item.boxes,
+              quantityBefore: stock.before,
+              quantityAfter: stock.after,
               reason: parsed.data.cancelReason ?? "キャンセル",
               actorId: session!.user.id,
               actorRole: "admin",

@@ -1,5 +1,7 @@
 # Staging
 
+> **Current-state note (2026-09-02 / RC2):** 現行STAGINGはCloudflare Worker + dedicated Neon staging DBで運用しています。以下にはVercel移行前の履歴情報も残っています。現在の判断は`ENVIRONMENTS_AND_RELEASE.md`と実設定を優先してください。
+
 Staging must be isolated from production.
 
 Required settings:

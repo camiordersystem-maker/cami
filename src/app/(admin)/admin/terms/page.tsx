@@ -130,7 +130,7 @@ export default function AdminTermsPage() {
           <label className="block text-sm font-medium text-slate-700 mb-2">
             約款・契約書の内容
           </label>
-          <textarea
+          <textarea aria-label="約款・契約書の内容"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={28}

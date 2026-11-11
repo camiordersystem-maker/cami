@@ -64,11 +64,11 @@ export default function AdminInvoicesPage() {
         setMessage({ text: "請求書を発行しました", ok: true });
         load();
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
       setGenerating(false);
-      setMessage({ text: "ネットワークエラーが発生しました", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 
@@ -95,9 +95,10 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">会員</label>
             <select
+              aria-label="会員"
               value={form.memberId}
               onChange={(e) => setForm((f) => ({ ...f, memberId: e.target.value }))}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full max-w-full sm:w-auto sm:min-w-48"
               required
             >
               <option value="">会員を選択</option>
@@ -109,6 +110,7 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">年</label>
             <select
+              aria-label="年"
               value={form.year}
               onChange={(e) => setForm((f) => ({ ...f, year: parseInt(e.target.value) }))}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -119,6 +121,7 @@ export default function AdminInvoicesPage() {
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1.5">月</label>
             <select
+              aria-label="月"
               value={form.month}
               onChange={(e) => setForm((f) => ({ ...f, month: parseInt(e.target.value) }))}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

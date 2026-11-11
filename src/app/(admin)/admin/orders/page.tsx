@@ -104,7 +104,7 @@ export default async function AdminOrdersPage({
         </div>
         <a
           href="/api/admin/export/orders"
-          className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
+          className="inline-flex min-h-11 items-center text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
         >
           CSV出力
         </a>
@@ -116,7 +116,7 @@ export default async function AdminOrdersPage({
           <Link
             key={tab.key}
             href={`/admin/orders?status=${tab.key}&period=${period}&sort=${sort}${company ? `&company=${encodeURIComponent(company)}` : ""}`}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex min-h-11 items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               statusFilter === tab.key
                 ? tab.key === "cancel_requested"
                   ? "bg-red-700 text-white"
@@ -178,7 +178,7 @@ export default async function AdminOrdersPage({
                   <div className="text-right">
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="text-sm text-blue-600 hover:underline font-medium"
+                      className="inline-flex min-h-11 items-center rounded-md px-2 -mx-2 text-sm text-blue-600 hover:underline font-medium"
                     >
                       詳細 →
                     </Link>

@@ -74,7 +74,7 @@ async function main() {
       role: "superadmin",
     });
     console.log(`  ✓ Admin created: ${adminEmail}`);
-    console.log(`  ⚠  Initial password: ${adminPassword}（要変更）`);
+    console.log("  ⚠  Initial administrator password configured（要変更）");
   } else {
     console.log(`  ℹ  Admin already exists: ${adminEmail}`);
   }

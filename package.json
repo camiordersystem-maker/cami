@@ -13,7 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
-    "test": "tsx src/lib/__tests__/business-rules.test.ts",
+    "test": "tsx src/lib/__tests__/business-rules.test.ts && tsx src/lib/__tests__/line-order-notification.test.ts && tsx src/lib/__tests__/inventory.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "npx tsx src/lib/db/migrate.ts",
     "db:migrate:pg": "npx tsx src/lib/db/migrate.pg.ts",
@@ -39,8 +39,10 @@
     "local:restore": "tsx scripts/local-restore.ts",
     "local:smoke": "tsx scripts/local-smoke.ts",
     "scan:secrets": "tsx scripts/secret-scan.ts",
-    "docs:generate": "tsx scripts/generate-handover-docs.ts",
-    "local:migrate": "tsx scripts/local-migrate.ts"
+    "docs:generate": "node scripts/generate-handover-docs.mjs",
+    "local:migrate": "tsx scripts/local-migrate.ts",
+    "docs:check": "node scripts/check-documentation.mjs",
+    "manual:capture": "node scripts/capture-manual-screenshots.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -50,15 +52,16 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
-    "next": "^16.3.1",
+    "next": "^16.4.6",
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.22.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "resend": "^6.14.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.16",
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
@@ -66,12 +69,17 @@
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.4.6",
+    "playwright": "1.62.1",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.160.0"
   },
   "overrides": {
+    "glob": "14.0.4",
+    "minimatch": "11.0.7",
+    "zod": "$zod",
     "postcss": "8.5.26",
     "@esbuild-kit/core-utils": {
       "esbuild": "0.25.12"

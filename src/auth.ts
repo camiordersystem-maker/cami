@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { authConfig } from "./auth.config";
+import { authConfigBase } from "./auth.config";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -14,7 +14,7 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...authConfig,
+  ...authConfigBase,
   providers: [
     Credentials({
       credentials: {
@@ -29,8 +29,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!checkRateLimit(rateLimitKey("login", email), 10, 15 * 60 * 1000)) {
           // ブルートフォース対策のレート制限発動。攻撃者へのヒントを避けるため
           // クライアントへは通常の認証失敗と同じ応答を返すが、監視のためサーバー
-          // ログには明示的に記録する。
-          console.warn(`[auth] rate limit exceeded for login attempts: ${email}`);
+          // ログには明示的に記録する。ただし個人情報は出力しない。
+          console.warn("[auth] rate limit exceeded for login attempts");
           return null;
         }
 

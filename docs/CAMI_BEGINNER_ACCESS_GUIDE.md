@@ -1,5 +1,7 @@
 # Cami受発注システム アクセスガイド（初心者向け）
 
+> **Legacy handover note:** この文書は2026-07時点の初心者向け履歴資料で、Production URLやplatform記述に古い内容があります。現在の利用者操作はシステム内`/help` / `/admin/help`、技術情報は`docs/README.md`を優先してください。
+
 > ログイン情報（パスワード）はこのファイルに記載しません。
 > 秘密ファイルを参照してください: `/Users/hiroshikento/Documents/Cami受発注システム_ログイン情報_秘密.txt`
 

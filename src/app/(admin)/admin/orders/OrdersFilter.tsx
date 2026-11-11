@@ -36,8 +36,10 @@ export default function AdminOrdersFilter({ currentPeriod, currentSort, currentC
     <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-wrap gap-3 items-end">
       {/* Period */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-500">期間</label>
+        <label htmlFor="order-period" className="text-xs font-medium text-slate-500">期間</label>
         <select
+          id="order-period"
+          name="period"
           value={currentPeriod}
           onChange={(e) => update({ period: e.target.value })}
           className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -51,8 +53,10 @@ export default function AdminOrdersFilter({ currentPeriod, currentSort, currentC
 
       {/* Sort */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-500">並び順</label>
+        <label htmlFor="order-sort" className="text-xs font-medium text-slate-500">並び順</label>
         <select
+          id="order-sort"
+          name="sort"
           value={currentSort}
           onChange={(e) => update({ sort: e.target.value })}
           className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -66,9 +70,11 @@ export default function AdminOrdersFilter({ currentPeriod, currentSort, currentC
 
       {/* Company search */}
       <form onSubmit={handleCompanySearch} className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-slate-500">店舗名</label>
+        <label htmlFor="order-company" className="text-xs font-medium text-slate-500">店舗名</label>
         <div className="flex gap-2">
           <input
+            id="order-company"
+            name="company"
             type="text"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
@@ -84,6 +90,7 @@ export default function AdminOrdersFilter({ currentPeriod, currentSort, currentC
           {currentCompany && (
             <button
               type="button"
+              aria-label="店舗名検索をクリア"
               onClick={() => { setCompany(""); update({ company: "" }); }}
               className="text-sm text-slate-500 hover:text-slate-700 px-2"
             >
