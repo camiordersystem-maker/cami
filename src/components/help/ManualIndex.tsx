@@ -15,7 +15,7 @@ export default function ManualIndex({ role, articles }: Props) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const visible = searchManualArticles(articles, query, category);
-  const featured = (role === "admin" ? ["admin-orders", "admin-inventory", "admin-incidents"] : ["place-order", "order-history", "addresses"])
+  const featured = (role === "admin" ? ["admin-review", "admin-orders", "admin-inventory", "admin-incidents"] : ["place-order", "order-history", "addresses"])
     .map((slug) => articles.find((article) => article.slug === slug)).filter((article): article is ManualArticle => Boolean(article));
 
   return (

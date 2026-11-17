@@ -51,6 +51,7 @@ export default function AdminInventoryPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [showReceipts, setShowReceipts] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const savingRef = useRef(false);
   const uncertainSave = useRef(false);
@@ -131,10 +132,11 @@ export default function AdminInventoryPage() {
   const fmt = (n: number) =>
     new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(n);
 
-  const totalBoxes = items.reduce((s, i) => s + i.availableBoxes, 0);
-  const totalValue = items.reduce((s, i) => s + i.availableBoxes * i.bottlesPerBox * i.retailPrice, 0);
-  const lowStockItems = items.filter((i) => i.availableBoxes > 0 && i.availableBoxes <= LOW_STOCK);
-  const outOfStockItems = items.filter((i) => i.availableBoxes === 0);
+  const visibleItems = items.filter((item) => showInactive || item.isActive);
+  const totalBoxes = visibleItems.reduce((s, i) => s + i.availableBoxes, 0);
+  const totalValue = visibleItems.reduce((s, i) => s + i.availableBoxes * i.bottlesPerBox * i.retailPrice, 0);
+  const lowStockItems = visibleItems.filter((i) => i.availableBoxes > 0 && i.availableBoxes <= LOW_STOCK);
+  const outOfStockItems = visibleItems.filter((i) => i.availableBoxes === 0);
 
   return (
     <div>
@@ -158,6 +160,8 @@ export default function AdminInventoryPage() {
           </a>
         </div>
       </div>
+
+      {!showReceipts && <label className="mb-4 inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} className="h-4 w-4 rounded focus-visible:outline-2 focus-visible:outline-blue-600" />販売停止商品も表示</label>}
 
       {message && (
         <div role={message.ok ? "status" : "alert"} className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
@@ -227,11 +231,11 @@ export default function AdminInventoryPage() {
           {/* Summary */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="text-xs text-slate-500 mb-1">総在庫数</div>
+              <div className="text-xs text-slate-500 mb-1">表示中の在庫数</div>
               <div className="text-xl font-bold text-slate-900">{totalBoxes.toLocaleString()} 箱</div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="text-xs text-slate-500 mb-1">在庫定価総額</div>
+              <div className="text-xs text-slate-500 mb-1">表示中の在庫定価総額</div>
               <div className="text-xl font-bold text-slate-900">{fmt(totalValue)}</div>
             </div>
           </div>
@@ -241,7 +245,7 @@ export default function AdminInventoryPage() {
               <div className="py-16 text-center text-slate-400 text-sm">読み込み中...</div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {items.map((item) => (
+                {visibleItems.map((item) => (
                   <div key={item.productId} className="px-6 py-5">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                       <div className="flex-1 min-w-[140px] break-words">

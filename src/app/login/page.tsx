@@ -32,7 +32,9 @@ export default function LoginPage() {
     }));
 
     if (!res || res.error) {
-      setError("メールアドレスまたはパスワードが正しくありません");
+      setError(res?.error === "CredentialsSignin"
+        ? "ログインできませんでした。入力内容やアカウントの利用期限をご確認ください。"
+        : "現在ログインを確認できません。時間をおいて再度お試しください。解決しない場合は運用担当者へお知らせください。");
       return;
     }
 

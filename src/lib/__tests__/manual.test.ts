@@ -18,4 +18,10 @@ assert.equal(searchManualArticles(adminManualArticles, "在庫", "トラブル�
 assert.equal(searchManualArticles(memberManualArticles, "").some((a) => a.role === "admin"), false);
 assert.equal(getContextHelpHref("admin", "/admin/inventory"), "/admin/help/admin-inventory");
 assert.equal(getContextHelpHref("admin", "/admin/help/admin-incidents"), null);
+const review = findManualArticle("admin", "admin-review");
+assert.ok(review);
+assert.equal(findManualArticle("member", "admin-review"), undefined);
+assert.ok(review.steps.some((step) => step.body.includes("更新操作はできません")));
+assert.ok(review.steps.some((step) => step.warning?.includes("個人情報") || step.warning?.includes("氏名・住所")));
+assert.ok(review.steps.some((step) => step.note?.includes("実在庫が未登録")));
 console.log("Manual search, role separation, article structure and context links: PASS");

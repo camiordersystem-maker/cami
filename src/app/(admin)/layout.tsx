@@ -42,6 +42,11 @@ export default function AdminLayout({
     (session?.user as { adminRole?: string })?.adminRole;
 
   const isSuperAdmin = adminRole === "superadmin";
+  const reviewExpiry = session?.user?.reviewExpiresAt;
+  const reviewExpiryTime = reviewExpiry ? Date.parse(reviewExpiry) : NaN;
+  const reviewExpiryText = Number.isFinite(reviewExpiryTime)
+    ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(reviewExpiryTime)
+    : null;
 
   const navItems = isSuperAdmin
     ? [...baseNavItems, ...superAdminNavItems]
@@ -229,6 +234,7 @@ export default function AdminLayout({
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 min-w-0 p-4 md:p-8">
+          {reviewExpiryText && <div role="status" className="mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-y border-blue-200 py-3 text-sm leading-7 text-blue-900"><div><strong>確認用・閲覧専用</strong><span className="ml-2 inline-block">有効期限：{reviewExpiryText}（日本時間）</span></div><Link href="/admin/help/admin-review" className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue-600">確認ガイド</Link></div>}
           {contextHelpHref && (
             <div className="mb-3 flex justify-end">
               <Link

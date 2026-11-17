@@ -11,9 +11,9 @@ export default function ManualArticlePage({ role, article }: Props) {
   const indexHref = role === "admin" ? "/admin/help" : "/help";
 
   return (
-    <article className="max-w-4xl mx-auto break-words">
+    <article className="max-w-4xl mx-auto break-words print:max-w-none print:text-black">
       <div className="mb-5 text-sm">
-        <Link href={indexHref} className="inline-flex min-h-11 items-center text-blue-600 hover:underline">
+        <Link href={indexHref} className="inline-flex min-h-11 items-center text-blue-600 hover:underline focus-visible:outline-2 focus-visible:outline-blue-600">
           ← ヘルプ・マニュアル一覧
         </Link>
       </div>
@@ -35,7 +35,7 @@ export default function ManualArticlePage({ role, article }: Props) {
         )}
       </div>
 
-      <nav aria-label="この手順の目次" className="mb-7 border-y border-slate-200 py-4">
+      <nav aria-label="この手順の目次" className="mb-7 border-y border-slate-200 py-4 print:hidden">
         <h2 className="mb-2 text-sm font-semibold text-slate-700">この手順の目次</h2>
         <ol className="space-y-1 text-sm">
           {article.steps.map((step, index) => <li key={step.title}><a href={`#step-${index + 1}`} className="inline-flex min-h-11 items-center gap-2 text-blue-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue-600"><span aria-hidden="true">{index + 1}.</span>{step.title}</a></li>)}
@@ -53,12 +53,12 @@ export default function ManualArticlePage({ role, article }: Props) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-slate-900">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-7 text-slate-600">{step.body}</p>
+                  <p className="mt-2 max-w-prose text-base leading-8 text-slate-700">{step.body}</p>
                   {step.note && (
-                    <div className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-sm leading-6 text-blue-800">{step.note}</div>
+                    <div className="mt-3 rounded-lg bg-blue-50 px-3 py-2 text-base leading-7 text-blue-800">{step.note}</div>
                   )}
                   {step.warning && (
-                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-base leading-7 text-amber-900">
                       注意：{step.warning}
                     </div>
                   )}
@@ -74,8 +74,8 @@ export default function ManualArticlePage({ role, article }: Props) {
       {article.tips && article.tips.length > 0 && (
         <section className="border-t border-slate-200 py-5">
           <h2 className="font-semibold text-slate-900">補足・ポイント</h2>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-            {article.tips.map((tip) => <li key={tip}>・{tip}</li>)}
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-700">
+            {article.tips.map((tip) => <li key={tip}>{tip}</li>)}
           </ul>
         </section>
       )}

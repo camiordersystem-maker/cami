@@ -24,6 +24,7 @@ export const authConfigBase = {
         session.user.id = token.id as string;
         (session.user as { role: string }).role = token.role as string;
         (session.user as { adminRole?: string }).adminRole = token.adminRole as string | undefined;
+        session.user.reviewExpiresAt = typeof token.reviewExpiresAt === "string" ? token.reviewExpiresAt : undefined;
       }
       return session;
     },
