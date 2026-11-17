@@ -9,6 +9,13 @@ type Props = {
 
 export default function ManualScreenshot({ src, alt }: Props) {
   const [failed, setFailed] = useState(false);
+  const heights: Record<string, number> = {
+    "/manual/screenshots/admin/dashboard.png": 1648,
+    "/manual/screenshots/admin/members.png": 981,
+    "/manual/screenshots/admin/orders.png": 1654,
+    "/manual/screenshots/member/dashboard.png": 1107,
+    "/manual/screenshots/member/orders.png": 1069,
+  };
 
   if (!src || failed) {
     return (
@@ -26,8 +33,12 @@ export default function ManualScreenshot({ src, alt }: Props) {
     <img
       src={src}
       alt={alt}
+      loading="lazy"
+      decoding="async"
+      width={1440}
+      height={heights[src] || 900}
       onError={() => setFailed(true)}
-      className="w-full rounded-xl border border-slate-200 bg-white shadow-sm"
+      className="h-auto w-full rounded-lg border border-slate-200 bg-white"
     />
   );
 }

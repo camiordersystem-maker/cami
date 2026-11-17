@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import type { ManualArticle, ManualRole } from "@/lib/manual";
+import { useState } from "react";
+import { searchManualArticles, type ManualArticle, type ManualRole } from "@/lib/manual";
 
 type Props = {
   role: ManualRole;
@@ -9,6 +12,11 @@ type Props = {
 export default function ManualIndex({ role, articles }: Props) {
   const base = role === "admin" ? "/admin/help" : "/help";
   const groups = Array.from(new Set(articles.map((article) => article.category)));
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("");
+  const visible = searchManualArticles(articles, query, category);
+  const featured = (role === "admin" ? ["admin-orders", "admin-inventory", "admin-incidents"] : ["place-order", "order-history", "addresses"])
+    .map((slug) => articles.find((article) => article.slug === slug)).filter((article): article is ManualArticle => Boolean(article));
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -22,24 +30,38 @@ export default function ManualIndex({ role, articles }: Props) {
         </p>
       </div>
 
-      <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-5">
-        <div className="font-semibold text-blue-900">使い方</div>
-        <p className="mt-1 text-sm leading-6 text-blue-800">
-          各業務画面の上部にある「？ この画面の使い方」から、今開いている画面に対応した説明へ直接移動できます。
-          画面キャプチャはSTAGINGから自動更新できる構成です。
-        </p>
-      </div>
+      <nav aria-label="よく使う手順" className="mb-7 border-y border-slate-200 py-4">
+        <h2 className="mb-2 text-sm font-semibold text-slate-700">よく使う手順</h2>
+        <ul className="flex flex-wrap gap-x-6 gap-y-1">
+          {featured.map((article) => <li key={article.slug}><Link href={`${base}/${article.slug}`} className="inline-flex min-h-11 items-center text-sm text-blue-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue-600">{article.title}</Link></li>)}
+        </ul>
+      </nav>
 
-      <div className="space-y-9">
-        {groups.map((group) => (
-          <section key={group}>
-            <h2 className="mb-3 text-sm font-bold tracking-wide text-slate-500">{group}</h2>
+      <form role="search" onSubmit={(event) => event.preventDefault()} className="mb-6 grid gap-4 sm:grid-cols-[1fr_12rem]">
+        <div>
+          <label htmlFor="manual-search" className="mb-2 block text-sm font-medium text-slate-700">手順を検索</label>
+          <input id="manual-search" name="q" type="search" value={query} maxLength={200} autoComplete="off" onChange={(event) => setQuery(event.target.value)} placeholder="例：出荷、在庫、LINE…" aria-controls="manual-results" className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-2 focus-visible:outline-blue-600" />
+        </div>
+        <div>
+          <label htmlFor="manual-category" className="mb-2 block text-sm font-medium text-slate-700">業務で絞り込む</label>
+          <select id="manual-category" name="category" value={category} onChange={(event) => setCategory(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 focus-visible:outline-2 focus-visible:outline-blue-600">
+            <option value="">すべての業務</option>{groups.map((group) => <option key={group} value={group}>{group}</option>)}
+          </select>
+        </div>
+      </form>
+      <p role="status" aria-live="polite" aria-atomic="true" className="mb-5 text-sm text-slate-600">{visible.length}件の手順</p>
+      {visible.length === 0 && <div className="border-y border-slate-200 py-8 text-sm leading-7 text-slate-700"><p>該当する手順がありません。短い言葉に変えるか、業務の絞り込みを解除してください。</p><button type="button" onClick={() => { setQuery(""); setCategory(""); }} className="min-h-11 text-blue-700 underline focus-visible:outline-2 focus-visible:outline-blue-600">検索条件をクリア</button></div>}
+
+      <div id="manual-results" className="space-y-9">
+        {groups.filter((group) => visible.some((article) => article.category === group)).map((group, index) => (
+          <section key={group} aria-labelledby={`manual-group-${index}`}>
+            <h2 id={`manual-group-${index}`} className="mb-3 text-base font-bold text-slate-700">{group}</h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {articles.filter((article) => article.category === group).map((article) => (
+              {visible.filter((article) => article.category === group).map((article) => (
                 <Link
                   key={article.slug}
                   href={`${base}/${article.slug}`}
-                  className="group rounded-xl border border-slate-200 bg-white p-5 transition hover:border-blue-300 hover:shadow-sm"
+                  className="group min-w-0 break-words rounded-lg border border-slate-200 bg-white p-5 transition-colors hover:border-blue-400 focus-visible:outline-2 focus-visible:outline-blue-600"
                 >
                   <div className="font-semibold text-slate-900 group-hover:text-blue-700">{article.title}</div>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{article.summary}</p>

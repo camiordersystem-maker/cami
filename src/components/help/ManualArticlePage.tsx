@@ -11,7 +11,7 @@ export default function ManualArticlePage({ role, article }: Props) {
   const indexHref = role === "admin" ? "/admin/help" : "/help";
 
   return (
-    <article className="max-w-4xl mx-auto">
+    <article className="max-w-4xl mx-auto break-words">
       <div className="mb-5 text-sm">
         <Link href={indexHref} className="inline-flex min-h-11 items-center text-blue-600 hover:underline">
           ← ヘルプ・マニュアル一覧
@@ -35,16 +35,18 @@ export default function ManualArticlePage({ role, article }: Props) {
         )}
       </div>
 
-      <section className="mb-8">
-        <h2 className="mb-3 text-lg font-semibold text-slate-900">画面イメージ</h2>
-        <ManualScreenshot src={article.screenshot} alt={`${article.title}の画面キャプチャ`} />
-      </section>
+      <nav aria-label="この手順の目次" className="mb-7 border-y border-slate-200 py-4">
+        <h2 className="mb-2 text-sm font-semibold text-slate-700">この手順の目次</h2>
+        <ol className="space-y-1 text-sm">
+          {article.steps.map((step, index) => <li key={step.title}><a href={`#step-${index + 1}`} className="inline-flex min-h-11 items-center gap-2 text-blue-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-blue-600"><span aria-hidden="true">{index + 1}.</span>{step.title}</a></li>)}
+        </ol>
+      </nav>
 
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">操作手順</h2>
         <ol className="space-y-4">
           {article.steps.map((step, index) => (
-            <li key={`${article.slug}-${index}`} className="rounded-xl border border-slate-200 bg-white p-5">
+            <li id={`step-${index + 1}`} key={`${article.slug}-${index}`} className="scroll-mt-28 border-b border-slate-200 py-5 first:pt-0">
               <div className="flex gap-4">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
                   {index + 1}
@@ -67,8 +69,10 @@ export default function ManualArticlePage({ role, article }: Props) {
         </ol>
       </section>
 
+      {article.screenshot && <details className="mb-8 border-y border-slate-200 py-4"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-600">画面イメージを見る</summary><div className="pt-3"><ManualScreenshot key={article.screenshot} src={article.screenshot} alt={`${article.title}の参考画面`} /><p className="mt-2 text-xs leading-6 text-slate-500">参考画像です。表示内容や件数はご利用中の画面と異なる場合があります。</p></div></details>}
+
       {article.tips && article.tips.length > 0 && (
-        <section className="rounded-xl border border-slate-200 bg-slate-50 p-5">
+        <section className="border-t border-slate-200 py-5">
           <h2 className="font-semibold text-slate-900">補足・ポイント</h2>
           <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
             {article.tips.map((tip) => <li key={tip}>・{tip}</li>)}
