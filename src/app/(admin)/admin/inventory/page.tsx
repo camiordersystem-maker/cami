@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { z } from "zod";
 import { formatDateTime } from "@/lib/utils";
 import { apiData, apiErrorMessage } from "@/lib/client-api";
 import { useAdminRole } from "@/lib/useAdminRole";
@@ -28,6 +29,16 @@ type Receipt = {
 };
 
 const LOW_STOCK = 10;
+const inventoryRows = z.array(z.object({
+  productId: z.string(), productName: z.string(), description: z.string().nullable(),
+  retailPrice: z.number().finite(), bottlesPerBox: z.number().int().positive(),
+  availableBoxes: z.number().int().nonnegative(), isActive: z.boolean(),
+}));
+const receiptRows = z.array(z.object({
+  id: z.string(), productId: z.string(), productName: z.string().nullable(),
+  boxes: z.number().int(), previousBoxes: z.number().int(), newBoxes: z.number().int(),
+  note: z.string().nullable(), adminName: z.string().nullable(), createdAt: z.string(),
+}));
 
 export default function AdminInventoryPage() {
   const { isViewer } = useAdminRole();
@@ -41,24 +52,26 @@ export default function AdminInventoryPage() {
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [showReceipts, setShowReceipts] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const savingRef = useRef(false);
+  const uncertainSave = useRef(false);
 
   async function load() {
     setLoading(true);
     setLoadError(false);
     try {
     const [invRes, recRes] = await Promise.all([
-      fetch("/api/admin/inventory/list"),
-      fetch("/api/admin/inventory/receipts"),
+      fetch("/api/admin/inventory/list", { signal: AbortSignal.timeout(15000) }),
+      fetch("/api/admin/inventory/receipts", { signal: AbortSignal.timeout(15000) }),
     ]);
     if (!invRes.ok || !recRes.ok) throw new Error("LOAD_FAILED");
-    if (invRes.ok) {
-      const data = await invRes.json();
+    const data = inventoryRows.parse(await invRes.json());
+    const history = receiptRows.parse(await recRes.json());
       setItems(data);
       const vals: Record<string, number> = {};
       data.forEach((i: InventoryItem) => { vals[i.productId] = i.availableBoxes; });
       setInputValues(vals);
-    }
-    if (recRes.ok) setReceipts(await recRes.json());
+    setReceipts(history);
+    uncertainSave.current = false;
     } catch {
       setLoadError(true);
     } finally {
@@ -69,18 +82,20 @@ export default function AdminInventoryPage() {
   useEffect(() => { load(); }, []);
 
   async function saveInventory(productId: string) {
-    if (saving) return;
+    if (savingRef.current || uncertainSave.current || loading || loadError) return;
     if (!Number.isSafeInteger(inputValues[productId]) || inputValues[productId] < 0) {
       setMessage({ text: "在庫数は0以上の整数を入力してください。", ok: false }); return;
     }
     if (!noteValues[productId]?.trim()) {
       setMessage({ text: "在庫の変更理由を入力してください。", ok: false }); return;
     }
+    savingRef.current = true;
     setSaving(productId);
     setMessage(null);
     try {
       const res = await fetch("/api/admin/inventory", {
         method: "PUT",
+        signal: AbortSignal.timeout(15000),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId,
@@ -98,12 +113,18 @@ export default function AdminInventoryPage() {
         setMessage({ text: isLow ? "在庫数を更新しました（在庫が少なくなっています）" : "在庫数を更新しました", ok: true });
         load();
       } else {
+        if (res.status >= 500) throw new Error("SAVE_RESULT_UNKNOWN");
         setMessage({ text: apiErrorMessage(data, "更新に失敗しました"), ok: false });
         if (res.status === 409) { setEditing(null); await load(); }
       }
     } catch {
+      uncertainSave.current = true;
+      setEditing(null);
+      setMessage({ text: "保存結果を確認できません。在庫・入庫履歴を再読み込みして確認してください。同じ変更を繰り返さないでください。", ok: false });
+      await load();
+    } finally {
+      savingRef.current = false;
       setSaving(null);
-      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 

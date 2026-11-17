@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { withDeadline } from "@/lib/client-timeout";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,11 +25,11 @@ export default function LoginPage() {
 
     const fd = new FormData(e.currentTarget);
     try {
-      const res = await signIn("credentials", {
+      const res = await withDeadline(signIn("credentials", {
       email: fd.get("email"),
       password: fd.get("password"),
       redirect: false,
-    });
+    }));
 
     if (!res || res.error) {
       setError("メールアドレスまたはパスワードが正しくありません");
