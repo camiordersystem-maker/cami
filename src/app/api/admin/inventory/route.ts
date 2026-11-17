@@ -14,6 +14,7 @@ const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD ?? "10");
 const updateSchema = z.object({
   productId: z.string(),
   availableBoxes: z.number().int().min(0),
+  expectedAvailableBoxes: z.number().int().min(0).optional(),
   note: z.string().trim().min(1, "理由を入力してください").max(200),
 });
 
@@ -38,6 +39,9 @@ export async function PUT(req: NextRequest) {
 
       if (!current) throw new Error("INVENTORY_NOT_FOUND");
       const previousBoxes = current.availableBoxes;
+      if (parsed.data.expectedAvailableBoxes !== undefined && parsed.data.expectedAvailableBoxes !== previousBoxes) {
+        throw new Error("INVENTORY_CONFLICT");
+      }
 
       const updated = await tx
         .update(schema.inventory)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -10,22 +10,27 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const submitting = useRef(false);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setError("");
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-    const res = await signIn("credentials", {
+    try {
+      const res = await signIn("credentials", {
       email: fd.get("email"),
       password: fd.get("password"),
       redirect: false,
     });
 
-    setLoading(false);
-
-    if (res?.error) {
+    if (!res || res.error) {
       setError("メールアドレスまたはパスワードが正しくありません");
       return;
     }
@@ -33,10 +38,16 @@ export default function LoginPage() {
     // Redirect based on role via root page
     router.push("/");
     router.refresh();
+    } catch {
+      setError("通信に失敗しました。接続を確認して、もう一度ログインしてください。");
+    } finally {
+      submitting.current = false;
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-100">
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -48,28 +59,34 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} aria-busy={loading} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1.5">
                 メールアドレス
               </label>
               <input
                 name="email"
+                id="login-email"
                 type="email"
                 required
-                autoComplete="email"
+                autoComplete="username"
+                spellCheck={false}
+                autoCapitalize="none"
+                aria-describedby={error ? "login-error" : undefined}
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 placeholder="example@company.co.jp"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 mb-1.5">
                 パスワード
               </label>
               <input
                 name="password"
-                type="password"
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                aria-describedby={error ? "login-error" : undefined}
                 required
                 autoComplete="current-password"
                 className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -77,8 +94,13 @@ export default function LoginPage() {
               />
             </div>
 
+            <label className="flex min-h-11 items-center gap-2 text-sm text-slate-600 cursor-pointer">
+              <input type="checkbox" checked={showPassword} onChange={(e) => setShowPassword(e.target.checked)} className="h-4 w-4" />
+              パスワードを表示
+            </label>
+
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <div ref={errorRef} id="login-error" role="alert" tabIndex={-1} className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}

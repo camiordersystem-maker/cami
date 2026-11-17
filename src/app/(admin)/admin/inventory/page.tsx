@@ -40,12 +40,17 @@ export default function AdminInventoryPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
   const [showReceipts, setShowReceipts] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   async function load() {
+    setLoading(true);
+    setLoadError(false);
+    try {
     const [invRes, recRes] = await Promise.all([
       fetch("/api/admin/inventory/list"),
       fetch("/api/admin/inventory/receipts"),
     ]);
+    if (!invRes.ok || !recRes.ok) throw new Error("LOAD_FAILED");
     if (invRes.ok) {
       const data = await invRes.json();
       setItems(data);
@@ -54,12 +59,23 @@ export default function AdminInventoryPage() {
       setInputValues(vals);
     }
     if (recRes.ok) setReceipts(await recRes.json());
+    } catch {
+      setLoadError(true);
+    } finally {
     setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
 
   async function saveInventory(productId: string) {
+    if (saving) return;
+    if (!Number.isSafeInteger(inputValues[productId]) || inputValues[productId] < 0) {
+      setMessage({ text: "在庫数は0以上の整数を入力してください。", ok: false }); return;
+    }
+    if (!noteValues[productId]?.trim()) {
+      setMessage({ text: "在庫の変更理由を入力してください。", ok: false }); return;
+    }
     setSaving(productId);
     setMessage(null);
     try {
@@ -69,6 +85,7 @@ export default function AdminInventoryPage() {
         body: JSON.stringify({
           productId,
           availableBoxes: inputValues[productId] ?? 0,
+          expectedAvailableBoxes: items.find((item) => item.productId === productId)?.availableBoxes,
           note: noteValues[productId] || undefined,
         }),
       });
@@ -82,6 +99,7 @@ export default function AdminInventoryPage() {
         load();
       } else {
         setMessage({ text: apiErrorMessage(data, "更新に失敗しました"), ok: false });
+        if (res.status === 409) { setEditing(null); await load(); }
       }
     } catch {
       setSaving(null);
@@ -99,12 +117,12 @@ export default function AdminInventoryPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">在庫管理</h1>
           <p className="text-slate-500 text-sm mt-1">商品ごとの在庫数を管理します</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setShowReceipts(!showReceipts)}
             className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-4 py-2 rounded-lg transition-colors"
@@ -121,10 +139,11 @@ export default function AdminInventoryPage() {
       </div>
 
       {message && (
-        <div className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+        <div role={message.ok ? "status" : "alert"} className={`mb-4 px-4 py-3 rounded-xl text-sm border ${message.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-red-50 border-red-200 text-red-700"}`}>
           {message.text}
         </div>
       )}
+      {loadError && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">在庫・履歴を取得できませんでした。<button type="button" onClick={load} disabled={loading} className="ml-2 min-h-11 underline">再読み込み</button></div>}
 
       {/* Low stock alerts */}
       {(outOfStockItems.length > 0 || lowStockItems.length > 0) && !showReceipts && (
@@ -142,7 +161,7 @@ export default function AdminInventoryPage() {
         </div>
       )}
 
-      {showReceipts ? (
+      {loadError ? null : showReceipts ? (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-semibold text-slate-900">入庫履歴（直近100件）</h2>
@@ -203,9 +222,9 @@ export default function AdminInventoryPage() {
               <div className="divide-y divide-slate-100">
                 {items.map((item) => (
                   <div key={item.productId} className="px-6 py-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex-1 min-w-[140px] break-words">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-semibold text-slate-900 text-sm">{item.productName}</span>
                           {!item.isActive && (
                             <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">販売停止</span>
@@ -222,24 +241,29 @@ export default function AdminInventoryPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 ml-6">
+                      <div className="flex w-full sm:w-auto items-center justify-end gap-3">
                         {editing === item.productId ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
+                          <div className="w-full space-y-2">
+                            <label htmlFor={`stock-${item.productId}`} className="block text-xs text-slate-600">変更後の在庫（箱）</label>
+                            <div className="flex flex-wrap items-center gap-2">
                               <input
                                 type="number"
+                                id={`stock-${item.productId}`}
+                                step={1}
+                                disabled={saving === item.productId}
                                 min={0}
                                 value={inputValues[item.productId] ?? 0}
                                 onChange={(e) =>
                                   setInputValues((prev) => ({
                                     ...prev,
-                                    [item.productId]: parseInt(e.target.value) || 0,
+                                    [item.productId]: Number(e.target.value),
                                   }))
                                 }
                                 className="w-24 text-center border border-blue-400 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               />
                               <span className="text-sm text-slate-500">箱</span>
                               <button
+                                type="button"
                                 onClick={() => saveInventory(item.productId)}
                                 disabled={saving === item.productId}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors disabled:opacity-50"
@@ -247,17 +271,26 @@ export default function AdminInventoryPage() {
                                 {saving === item.productId ? "保存中..." : "保存"}
                               </button>
                               <button
+                                type="button"
+                                aria-label="在庫編集を取り消す"
+                                title="編集を取り消す"
+                                disabled={saving === item.productId}
                                 onClick={() => { setEditing(null); setInputValues((prev) => ({ ...prev, [item.productId]: item.availableBoxes })); }}
                                 className="text-slate-500 text-sm px-2"
                               >
                                 ✕
                               </button>
                             </div>
+                            <label htmlFor={`stock-note-${item.productId}`} className="block text-xs text-slate-600">変更理由（必須）</label>
                             <input
+                              id={`stock-note-${item.productId}`}
+                              required
+                              maxLength={200}
+                              disabled={saving === item.productId}
                               type="text"
                               value={noteValues[item.productId] ?? ""}
                               onChange={(e) => setNoteValues((prev) => ({ ...prev, [item.productId]: e.target.value }))}
-                              placeholder="メモ（例：〇月〇日入庫）"
+                              placeholder="例：11月17日 入荷・検品完了"
                               className="w-full border border-slate-300 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
@@ -290,7 +323,7 @@ export default function AdminInventoryPage() {
                     <div className="mt-3">
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${
+                          className={`h-full rounded-full transition-[width] motion-reduce:transition-none ${
                             item.availableBoxes === 0 ? "bg-red-400"
                               : item.availableBoxes <= LOW_STOCK ? "bg-amber-400"
                               : "bg-green-400"
