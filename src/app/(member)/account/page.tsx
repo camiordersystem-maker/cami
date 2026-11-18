@@ -62,7 +62,7 @@ export default function AccountPage() {
           </div>
           <div className="flex gap-4">
             <span className="text-slate-500 w-24 shrink-0">メールアドレス</span>
-            <span className="text-slate-900">{session?.user?.email}</span>
+            <span className="min-w-0 break-all text-slate-900">{session?.user?.email}</span>
           </div>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function AccountPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {session?.user?.managedAuth ? <p className="text-base leading-7 text-slate-700">このアカウントのパスワード変更は、運用担当者へご連絡ください。</p> : <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="current-password"
@@ -143,7 +143,7 @@ export default function AccountPage() {
           >
             {saving ? "変更中..." : "パスワードを変更する"}
           </button>
-        </form>
+        </form>}
 
         <div className="mt-6 text-xs text-slate-500 bg-slate-50 rounded-lg px-4 py-3">
           パスワードを忘れた場合は本部（{process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "info@cami.co.jp"}）へお問い合わせください。

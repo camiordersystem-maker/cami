@@ -8,6 +8,7 @@ declare module "next-auth" {
       name: string;
       role: "admin" | "member";
       reviewExpiresAt?: string;
+      managedAuth?: boolean;
     };
   }
   interface User {
@@ -22,5 +23,6 @@ declare module "next-auth/jwt" {
     role: "admin" | "member";
     reviewAuthUserId?: string;
     reviewExpiresAt?: string;
+    managedAuthUserId?: string;
   }
 }
