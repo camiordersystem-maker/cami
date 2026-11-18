@@ -48,7 +48,7 @@ export default async function DeliveryNotePage({ params }: { params: Promise<{ i
     <div className="min-h-screen bg-white">
       {/* Print Controls */}
       <div className="no-print bg-slate-100 px-8 py-3 flex items-center justify-between border-b border-slate-200">
-        <a href={`/admin/orders/${id}`} className="text-sm text-blue-600 hover:underline">
+        <a href={`/admin/orders/${id}`} className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
           ← 注文詳細に戻る
         </a>
         <PrintButton />
@@ -59,7 +59,7 @@ export default async function DeliveryNotePage({ params }: { params: Promise<{ i
         {/* Header */}
         <div className="flex justify-between items-start mb-10">
           <div>
-            <div className="text-3xl font-bold text-slate-900">納 品 書</div>
+            <h1 className="text-3xl font-bold text-slate-900">納 品 書</h1>
             <div className="text-slate-500 text-sm mt-1">DELIVERY NOTE</div>
           </div>
           <div className="text-right">

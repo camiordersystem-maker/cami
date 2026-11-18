@@ -9,16 +9,72 @@ const PUBLIC_PATHS = [
   "/api/register",
   "/api/health",
   "/api/readiness",
+  "/api/webhooks/line",
   "/_next",
   "/favicon.ico",
   "/cami-logo.png",
 ]
 
+
+// Cami cross-site mutation protection
+//
+// Defense in depth in addition to SameSite cookies.
+//
+// Exclusions:
+// - /api/auth/*: Auth.js authentication/callback flow
+// - /api/webhooks/line: authenticated separately with LINE signature
+//
+// Requests without browser Origin / Fetch Metadata headers remain compatible
+// with trusted server-to-server clients.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"])
+
+function isCrossSiteProtectionExempt(pathname: string) {
+  return (
+    pathname === "/api/auth" ||
+    pathname.startsWith("/api/auth/") ||
+    pathname === "/api/webhooks/line"
+  )
+}
+
+function shouldBlockCrossSiteMutation(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  if (!pathname.startsWith("/api/")) {
+    return false
+  }
+
+  if (SAFE_METHODS.has(request.method.toUpperCase())) {
+    return false
+  }
+
+  if (isCrossSiteProtectionExempt(pathname)) {
+    return false
+  }
+
+  const fetchSite = request.headers.get("sec-fetch-site")
+
+  if (fetchSite === "cross-site") {
+    return true
+  }
+
+  const origin = request.headers.get("origin")
+
+  if (!origin) {
+    return false
+  }
+
+  try {
+    return new URL(origin).origin !== request.nextUrl.origin
+  } catch {
+    return true
+  }
+}
+
 function withSecurityHeaders(response: NextResponse) {
-  response.headers.set("X-Content-Type-Options", "nosniff")
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  response.headers.set("X-Frame-Options", "DENY")
-  response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:")
+
+
+
+
   if (process.env.NODE_ENV === "production") {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
   }
@@ -27,6 +83,21 @@ function withSecurityHeaders(response: NextResponse) {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (shouldBlockCrossSiteMutation(request)) {
+    return withSecurityHeaders(
+      NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "FORBIDDEN",
+            message: "この送信元からの操作は許可されていません",
+          },
+        },
+        { status: 403 }
+      )
+    )
+  }
 
   // 公開パスはそのまま通す
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path))

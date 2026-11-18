@@ -33,10 +33,7 @@ export async function GET(req: NextRequest) {
       .orderBy(desc(schema.inventoryReceipts.createdAt))
       .limit(100);
 
-    const all = await query;
-    const results = productId
-      ? all.filter((r: typeof all[0]) => r.productId === productId)
-      : all;
+    const results = await query.where(productId ? eq(schema.inventoryReceipts.productId, productId) : undefined);
 
     return NextResponse.json(results);
   } catch (e) {

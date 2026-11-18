@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useAdminRole } from "@/lib/useAdminRole";
+import { z } from "zod";
 
 type Product = {
   id: string;
@@ -16,10 +17,18 @@ type Product = {
   availableBoxes: number;
 };
 
+const productRows = z.array(z.object({
+  id: z.string(), name: z.string(), description: z.string().nullable(), imageUrl: z.string().nullable(),
+  retailPrice: z.number().int().positive(), bottlesPerBox: z.number().int().positive(),
+  isActive: z.boolean(), createdAt: z.string(), availableBoxes: z.number().int().nonnegative(),
+}));
+
 export default function AdminProductsPage() {
   const { isViewer } = useAdminRole();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
@@ -29,9 +38,17 @@ export default function AdminProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
-    const res = await fetch("/api/admin/products/list");
-    if (res.ok) setProducts(await res.json());
-    setLoading(false);
+    setLoading(true);
+    setLoadError(false);
+    try {
+      const res = await fetch("/api/admin/products/list", { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error("LOAD_FAILED");
+      setProducts(productRows.parse(await res.json()));
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -107,7 +124,7 @@ export default function AdminProductsPage() {
       load();
     } else {
       const d = await res.json().catch(() => ({}));
-      setError((d as { error?: string }).error ?? "エラーが発生しました");
+      setError((d as { error?: string }).error ?? "処理を完了できませんでした。もう一度お試しください。");
     }
   }
 
@@ -124,11 +141,12 @@ export default function AdminProductsPage() {
     new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(n);
 
   const isFormOpen = showForm || !!editing;
+  const visibleProducts = products.filter((product) => showInactive || product.isActive);
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-slate-900">商品管理</h1>
           <p className="text-slate-500 text-sm mt-1">商品マスタの追加・編集・画像登録</p>
         </div>
@@ -255,17 +273,24 @@ export default function AdminProductsPage() {
         </div>
       )}
 
+      <label className="mb-4 inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} className="h-4 w-4 rounded focus-visible:outline-2 focus-visible:outline-blue-600" />
+        販売停止商品も表示
+      </label>
+
       {/* Products Table */}
       <div className="bg-white rounded-xl border border-slate-200">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-sm">読み込み中...</div>
-        ) : products.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 text-sm">商品がありません</div>
+        ) : loadError ? (
+          <div role="alert" className="p-6 text-sm leading-7 text-red-700">商品を取得できませんでした。<button type="button" onClick={load} className="ml-2 min-h-11 underline focus-visible:outline-2 focus-visible:outline-blue-600">再読み込み</button></div>
+        ) : visibleProducts.length === 0 ? (
+          <div role="status" className="py-16 text-center text-slate-500 text-sm">表示する商品がありません</div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {products.map((p) => (
+            {visibleProducts.map((p) => (
               <div key={p.id} className="px-6 py-4">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-wrap items-start gap-4">
                   {/* Thumbnail */}
                   <div className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
                     {p.imageUrl ? (
@@ -282,8 +307,8 @@ export default function AdminProductsPage() {
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="min-w-[min(100%,12rem)] flex-1 break-words">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-semibold text-slate-900 text-sm">{p.name}</span>
                       {!p.isActive && (
                         <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">販売停止中</span>
@@ -306,7 +331,7 @@ export default function AdminProductsPage() {
                   </div>
 
                   {!isViewer && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex max-w-full flex-wrap items-center gap-2 shrink-0">
                       <button
                         onClick={() => openForm(p)}
                         className="text-xs text-blue-600 hover:underline"

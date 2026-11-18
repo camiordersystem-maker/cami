@@ -1,57 +1,95 @@
 # Cami Order System
 
-BtoB ordering system for Cami headquarters and franchise/member stores.
+Cami本部と加盟店・取引先のためのBtoB受発注システムです。
 
-## Current Status
+Documentation baseline: RC2 `dcde0d0ce4dea0a4b17f4204a4556ee14a2c849c`
 
-Production readiness: `NOT READY`
+## Current State
 
-The app builds and includes core order, member, product, inventory, terms, announcement, administrator, and monthly invoice screens. Remaining blockers are documented in `docs/PRODUCTION_RELEASE.md`, `docs/STAGING.md`, and `docs/OPERATIONS.md`.
+2026-09-02時点のRC2 application releaseはProductionへ反映済みです。Production DB migrationは不要なreleaseとして検証され、custom domain / DNS cutoverは別工程です。
 
-## Local Commands
+現在のProduction application entrypoint:
+
+`https://cami-order-system-production.cami-order-system.workers.dev`
+
+## Documentation
+
+まず `docs/README.md` を開いてください。
+
+特に:
+
+- `docs/SYSTEM_OVERVIEW.md`
+- `docs/ARCHITECTURE.md`
+- `docs/BUSINESS_FLOWS.md`
+- `docs/ROLES_AND_PERMISSIONS.md`
+- `docs/DATA_MODEL.md`
+- `docs/API_SPEC.md`
+- `docs/INTEGRATIONS.md`
+- `docs/ENVIRONMENTS_AND_RELEASE.md`
+- `docs/MANUAL_MAINTENANCE.md`
+- `docs/DOCUMENTATION_POLICY.md`
+
+コードから生成するroute/API/DB/migration一覧は`docs/generated/`にあります。
+
+```bash
+npm run docs:generate
+npm run docs:check
+```
+
+## In-app Manual
+
+利用者マニュアルはシステム内に組み込みます。
+
+- 店舗: `/help`
+- 本部: `/admin/help`
+- 主要画面: `？ この画面の使い方`
+
+本文は`src/lib/manual.ts`でGit管理します。画面キャプチャはSTAGINGから自動取得する構成です。
+
+```bash
+npm run manual:capture
+```
+
+詳細は`docs/MANUAL_MAINTENANCE.md`を参照してください。
+
+## Stack
+
+- Next.js 16 App Router / webpack
+- TypeScript
+- React 18
+- Tailwind CSS 4
+- Auth.js / NextAuth v5
+- Drizzle ORM
+- PostgreSQL / Neon (Production)
+- Cloudflare Workers / OpenNext
+- SQLite / local PostgreSQL development paths
+- LINE Messaging API
+- Resend integration
+
+## Common Development Commands
 
 ```bash
 npm run dev
-npm run lint
 npm run typecheck
+npm run lint
 npm test
-npm run preflight
-```
-
-`npm run build` runs Next.js with `NODE_ENV=production`, which triggers the
-same production DB guard described below — **it intentionally fails against
-the local SQLite database.** To verify the production build compiles, run it
-with a dummy PostgreSQL URL instead:
-
-```bash
-export DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-export AUTH_SECRET="dummy-secret"
+npm run scan:secrets
 npm run build
+npm run docs:generate
+npm run docs:check
 ```
 
 ## Database
 
-Local development uses SQLite when `DATABASE_URL` is not PostgreSQL.
+Runtime schema selection is handled by `src/lib/db/schema.ts`.
 
-Production must use PostgreSQL. Runtime startup fails in production (including
-local `npm run build`, since that also sets `NODE_ENV=production`) if:
+- PostgreSQL: `schema-pg.ts`
+- SQLite fallback: `schema-sqlite.ts`
 
-- `DATABASE_URL` is missing.
-- `DATABASE_URL` does not point to PostgreSQL.
-- `AUTH_SECRET` or `NEXTAUTH_SECRET` is missing.
+Production runtime must use PostgreSQL and requires an Auth secret. Production DB write/migration must never be performed as an incidental side effect of normal documentation or UI work.
 
-`vercel-build` intentionally runs only `next build`; seeds are not run during production builds.
+## Release Safety
 
-## Release
+Production deploy, Production DB mutation/migration, DNS/custom-domain changes, LINE configuration writes, storage creation, and paid-service changes are separate controlled operations.
 
-Do not production deploy from this prompt/run.
-
-The production release process is locked until the operator explicitly says:
-
-`現在のを本番環境にプッシュ`
-
-See `docs/PRODUCTION_RELEASE.md` and `docs/ROLLBACK.md`.
-
-## Billing Boundary
-
-The current invoice feature is a monthly aggregate invoice, not a complete production billing workflow. Until invoice snapshots, PDF/email, revision history, payment history, and correction handling are implemented, billing must be completed outside the system.
+Use the release and rollback runbooks under `docs/` and require explicit scope approval before changing Production.

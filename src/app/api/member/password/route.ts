@@ -11,6 +11,9 @@ export async function PATCH(req: NextRequest) {
 
   const role = (session.user as { role: string }).role;
   if (role !== "member") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (session.user.managedAuth) {
+    return NextResponse.json({ error: "このアカウントのパスワード変更は運用担当者へご依頼ください。" }, { status: 409 });
+  }
 
   const body = await req.json().catch(() => null) as { currentPassword?: string; newPassword?: string } | null;
   if (!body?.currentPassword || !body?.newPassword) {
@@ -42,7 +45,9 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error("member password PATCH error:", e);
+    console.error("member_password_patch_failed", {
+      errorType: e instanceof Error ? e.name : "UnknownError",
+    });
     return NextResponse.json({ error: "パスワードの変更に失敗しました" }, { status: 500 });
   }
 }

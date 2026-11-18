@@ -1,3 +1,4 @@
+import { cache } from "react";
 import * as schema from "./schema";
 import { assertRuntimeEnv, isPostgresUrl } from "@/lib/env";
 
@@ -71,11 +72,41 @@ const globalForDb = globalThis as unknown as {
   db: ReturnType<typeof createDb> | undefined;
 };
 
-export const db = globalForDb.db ?? createDb();
+// Cloudflare Workersはリクエストをまたいだ I/O オブジェクトの使い回しを
+// 禁止している（"Cannot perform I/O on behalf of a different request"）。
+// Neonの@neondatabase/serverless Poolを1つのWorkerインスタンス（複数
+// リクエストを処理し続ける）でモジュールレベルの定数として使い回すと
+// この違反になる。
+//
+// `export const db = createDb()` のような書き方は、値がモジュール初回
+// 読込時に1度だけ計算されるため、この対策として不十分（実際に検証して
+// 500/200/500と不安定になることを確認済み）。React.cache()でNext.jsの
+// 「リクエスト単位」の仕組みに接続生成を乗せ、Proxyで既存の54箇所の
+// `import { db } from "@/lib/db"` の呼び出し方を変えずに済むようにする。
+//
+// 同一リクエスト内の複数クエリ・db.transaction()は同じ接続を共有する
+// （cache()は同一リクエスト内では同じ結果を返すため、トランザクション内の
+// pg_advisory_xact_lockを使った排他制御はこれまで通り機能する）。
+const isCloudflareWorkers = process.env.RUNTIME_TARGET === "cloudflare-workers";
+const getRequestScopedDb = cache(() => createDb());
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.db = db;
+function resolveDb(): ReturnType<typeof createDb> {
+  if (isCloudflareWorkers) {
+    return getRequestScopedDb();
+  }
+  if (!globalForDb.db) {
+    globalForDb.db = createDb();
+  }
+  return globalForDb.db;
 }
+
+export const db = new Proxy({} as ReturnType<typeof createDb>, {
+  get(_target, prop) {
+    const instance = resolveDb() as unknown as Record<PropertyKey, unknown>;
+    const value = Reflect.get(instance, prop, instance);
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+}) as ReturnType<typeof createDb>;
 
 export { schema };
 export type DB = typeof db;

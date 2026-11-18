@@ -64,7 +64,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセルを承認しました", ok: true }); load(); }
-    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+    else setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
   }
 
   async function handleCancelReject() {
@@ -75,7 +75,7 @@ export default function AdminOrderDetailPage() {
     const data = await res.json().catch(() => ({}));
     setUpdating(false);
     if (res.ok) { setMessage({ text: "キャンセル申込を拒否しました", ok: true }); load(); }
-    else setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+    else setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
   }
 
   async function load() {
@@ -116,7 +116,7 @@ export default function AdminOrderDetailPage() {
       setMessage({ text: "更新しました", ok: true });
       load();
     } else {
-      setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+      setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
     }
   }
 
@@ -157,16 +157,16 @@ export default function AdminOrderDetailPage() {
     <div>
       {ConfirmDialog}
       <div className="mb-6 flex items-center gap-3">
-        <Link href="/admin/orders" className="text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
+        <Link href="/admin/orders" className="inline-flex min-h-11 items-center text-slate-500 hover:text-slate-700 text-sm">← 注文一覧</Link>
         <span className="text-slate-300">/</span>
         <span className="text-sm text-slate-700 font-medium">{order.orderNo}</span>
         <div className="ml-auto flex items-center gap-3">
-          <Link href={`/admin/audit-logs?targetType=order&targetId=${order.id}`} className="text-xs text-slate-400 hover:text-slate-600 hover:underline">
+          <Link href={`/admin/audit-logs?targetType=order&targetId=${order.id}`} className="inline-flex min-h-11 items-center text-xs text-slate-400 hover:text-slate-600 hover:underline">
             変更履歴を見る
           </Link>
           <Link
             href={`/admin/orders/${order.id}/delivery-note`}
-            className="text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
+            className="inline-flex min-h-11 items-center text-sm text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors"
           >
             納品書を印刷
           </Link>

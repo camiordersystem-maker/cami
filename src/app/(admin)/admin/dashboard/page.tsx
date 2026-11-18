@@ -146,7 +146,7 @@ export default async function AdminDashboardPage() {
               {stat.value}
             </div>
             {stat.href ? (
-              <Link href={stat.href} className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+              <Link href={stat.href} className="text-xs text-blue-600 hover:underline mt-1 inline-flex min-h-11 items-center">
                 {stat.sub} →
               </Link>
             ) : (
@@ -165,7 +165,7 @@ export default async function AdminDashboardPage() {
               未収合計：<span className="font-bold">{formatCurrency(Number(unpaidInvoices?.value ?? 0))}</span>
             </div>
           </div>
-          <Link href="/admin/invoices" className="text-sm text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
+          <Link href="/admin/invoices" className="inline-flex min-h-11 items-center text-sm text-amber-700 border border-amber-300 bg-white hover:bg-amber-50 px-4 py-2 rounded-lg transition-colors">
             請求書管理 →
           </Link>
         </div>
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage() {
         <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold text-red-800 text-sm">⏰ 支払期限超過（{overdueInvoices.length}件）</div>
-            <Link href="/admin/invoices" className="text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+            <Link href="/admin/invoices" className="inline-flex min-h-11 items-center text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
               請求書管理 →
             </Link>
           </div>
@@ -202,7 +202,7 @@ export default async function AdminDashboardPage() {
         <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold text-red-800 text-sm">⚠️ 在庫警告（{inventoryWarnings.length}件）</div>
-            <Link href="/admin/inventory" className="text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+            <Link href="/admin/inventory" className="inline-flex min-h-11 items-center text-sm text-red-700 border border-red-300 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
               在庫管理 →
             </Link>
           </div>
@@ -252,7 +252,7 @@ export default async function AdminDashboardPage() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">最近の注文</h2>
-            <Link href="/admin/orders" className="text-sm text-blue-600 hover:underline">すべて見る →</Link>
+            <Link href="/admin/orders" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">すべて見る →</Link>
           </div>
           {recentOrders.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">注文がありません</div>
@@ -289,7 +289,7 @@ export default async function AdminDashboardPage() {
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">最近の登録申請</h2>
-            <Link href="/admin/members" className="text-sm text-blue-600 hover:underline">すべて →</Link>
+            <Link href="/admin/members" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">すべて →</Link>
           </div>
           {recentMembers.length === 0 ? (
             <div className="py-12 text-center text-slate-400 text-sm">申請がありません</div>

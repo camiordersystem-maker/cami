@@ -75,6 +75,6 @@ export async function POST(req: NextRequest) {
     return ok({ registered: true });
   } catch (err) {
     console.error("Register error:", err);
-    return internalError("サーバーエラーが発生しました");
+    return internalError("登録処理を完了できませんでした。時間をおいてもう一度お試しください。");
   }
 }

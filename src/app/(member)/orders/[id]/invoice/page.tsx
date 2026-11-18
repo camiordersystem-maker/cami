@@ -55,7 +55,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-white">
       {/* Print Controls */}
       <div className="no-print bg-slate-100 px-8 py-3 flex items-center justify-between border-b border-slate-200">
-        <a href={`/orders/${id}`} className="text-sm text-blue-600 hover:underline">
+        <a href={`/orders/${id}`} className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
           ← 注文詳細に戻る
         </a>
         <PrintButton />
@@ -66,7 +66,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
         {/* Header */}
         <div className="flex justify-between items-start mb-10">
           <div>
-            <div className="text-3xl font-bold text-slate-900">請 求 書</div>
+            <h1 className="text-3xl font-bold text-slate-900">請 求 書</h1>
             <div className="text-slate-500 text-sm mt-1">INVOICE</div>
           </div>
           <div className="text-right">

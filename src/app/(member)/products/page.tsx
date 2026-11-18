@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -49,12 +50,29 @@ export default function ProductsPage() {
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [notice, setNotice] = useState("");
   const [csvError, setCsvError] = useState("");
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [submissionUncertain, setSubmissionUncertain] = useState(false);
+  const submitting = useRef(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { headingRef.current?.focus(); }, [step, loading]);
+  useEffect(() => { if (error) errorRef.current?.focus(); }, [error]);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(false);
+    async function loadList(path: string) {
+      const res = await fetch(path, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error("LOAD_FAILED");
+      const data = apiData<unknown>(await res.json());
+      if (!Array.isArray(data)) throw new Error("INVALID_LIST");
+      return data;
+    }
     Promise.all([
-      fetch("/api/products").then((r) => r.json()),
-      fetch("/api/addresses").then((r) => r.json()),
-      fetch("/api/feature-flags").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      loadList("/api/products"),
+      loadList("/api/addresses"),
+      fetch("/api/feature-flags", { signal: AbortSignal.timeout(15000) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]).then(async ([prods, addrs, flagsJson]) => {
       setProducts(prods);
       setAddresses(addrs);
@@ -67,7 +85,7 @@ export default function ProductsPage() {
       const reorderId = searchParams.get("reorder");
       if (reorderId && flagMap[FEATURE_FLAGS.QUICK_REORDER]) {
         try {
-          const res = await fetch(`/api/orders/${reorderId}`);
+          const res = await fetch(`/api/orders/${reorderId}`, { signal: AbortSignal.timeout(15000) });
           if (res.ok) {
             const order = await res.json();
             const nextQuantities: Record<string, number> = {};
@@ -95,12 +113,13 @@ export default function ProductsPage() {
       setLoading(false);
     }).catch(() => {
       setLoading(false);
-      setError("データの読み込みに失敗しました。ページを再読み込みしてください。");
+      setLoadError(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reload]);
 
   function updateQty(productId: string, val: number) {
+    setError("");
     setQuantities((prev) => ({ ...prev, [productId]: Math.max(0, val) }));
   }
 
@@ -109,6 +128,7 @@ export default function ProductsPage() {
     e.target.value = "";
     if (!file) return;
     setCsvError("");
+    if (file.size > 256 * 1024) { setCsvError("CSVは256KB以下のファイルを選択してください。"); return; }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -126,9 +146,9 @@ export default function ProductsPage() {
         const cols = lines[i].split(",").map((c) => c.trim());
         if (cols.length < 2) { errors.push(`${i + 1}行目: 列数が不足しています`); continue; }
         const [name, boxesStr] = cols;
-        const boxes = parseInt(boxesStr, 10);
+        const boxes = /^\d+$/.test(boxesStr) ? Number(boxesStr) : NaN;
         if (!name) { errors.push(`${i + 1}行目: 商品名が空です`); continue; }
-        if (!Number.isFinite(boxes) || boxes < 0) { errors.push(`${i + 1}行目: 箱数が不正です（${boxesStr}）`); continue; }
+        if (!Number.isSafeInteger(boxes) || boxes < 0) { errors.push(`${i + 1}行目: 箱数は0以上の整数を入力してください`); continue; }
 
         const product = products.find((p) => p.name === name);
         if (!product) { errors.push(`${i + 1}行目: 商品「${name}」が見つかりません`); continue; }
@@ -162,6 +182,9 @@ export default function ProductsPage() {
   }
 
   function goToConfirm() {
+    if (Object.values(quantities).some((n) => !Number.isSafeInteger(n) || n < 0)) {
+      setError("箱数は0以上の整数を入力してください。"); return;
+    }
     const items = buildCart();
     if (items.length === 0) { setError("商品を選択してください"); return; }
     if (!selectedAddress) { setError("配送先を選択してください"); return; }
@@ -178,10 +201,14 @@ export default function ProductsPage() {
   }
 
   async function submitOrder() {
+    if (submitting.current || submissionUncertain) return;
+    submitting.current = true;
     setOrdering(true);
     setError("");
+    try {
     const res = await fetch("/api/orders", {
       method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         shippingAddressId: selectedAddress,
@@ -190,10 +217,18 @@ export default function ProductsPage() {
       }),
     });
     const json = await res.json().catch(() => null);
-    setOrdering(false);
-    if (!res.ok) { setError(apiErrorMessage(json, "エラーが発生しました")); return; }
+    if (res.status >= 500) throw new Error("ORDER_RESULT_UNKNOWN");
+    if (!res.ok) { setError(apiErrorMessage(json, "処理を完了できませんでした。もう一度お試しください。")); return; }
     const data = apiData<{ orderId: string }>(json);
+    if (!data?.orderId) throw new Error("ORDER_RESULT_UNKNOWN");
     router.push(`/orders/${data.orderId}`);
+    } catch {
+      setSubmissionUncertain(true);
+      setError("注文の受付結果を確認できませんでした。重複を避けるため、再注文の前に注文履歴をご確認ください。");
+    } finally {
+      submitting.current = false;
+      setOrdering(false);
+    }
   }
 
   const subtotal = cart.reduce((sum, i) => sum + i.unitPrice * i.boxes, 0);
@@ -216,17 +251,26 @@ export default function ProductsPage() {
     );
   }
 
+  if (loadError) return (
+    <section className="space-y-4">
+      <h1 className="text-2xl font-bold">商品注文</h1>
+      <p role="alert" className="text-red-700">商品・配送先を読み込めませんでした。通信環境を確認してください。</p>
+      <button type="button" onClick={() => setReload((n) => n + 1)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm">再読み込み</button>
+    </section>
+  );
+
   if (step === "confirm") {
     return (
       <div>
         <div className="mb-6">
           <button
             onClick={() => setStep("catalog")}
+            disabled={ordering}
             className="text-slate-500 hover:text-slate-700 text-sm"
           >
             ← 商品選択に戻る
           </button>
-          <h1 className="text-2xl font-bold text-slate-900 mt-2">注文内容の確認</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-slate-900 mt-2 scroll-mt-24">注文内容の確認</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -284,6 +328,7 @@ export default function ProductsPage() {
             <div className="bg-white rounded-xl border border-slate-200 p-5">
               <h3 className="font-semibold text-slate-900 mb-3 text-sm">備考・メモ（任意）</h3>
               <textarea
+                aria-label="備考・メモ（任意）"
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
                 rows={3}
@@ -316,14 +361,15 @@ export default function ProductsPage() {
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-4">
+                <div ref={errorRef} role="alert" tabIndex={-1} className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-4 scroll-mt-24">
                   {error}
                 </div>
               )}
+              {submissionUncertain && <Link href="/orders" className="mb-4 inline-flex min-h-11 items-center text-blue-700 underline">注文履歴を確認する</Link>}
 
               <button
                 onClick={submitOrder}
-                disabled={ordering}
+                disabled={ordering || submissionUncertain}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-xl font-semibold transition-colors"
               >
                 {ordering ? "送信中..." : "この内容で注文する"}
@@ -341,12 +387,12 @@ export default function ProductsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">商品注文</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold text-slate-900 scroll-mt-24">商品注文</h1>
         <p className="text-slate-500 text-sm mt-1">ご希望の数量をご入力ください</p>
       </div>
 
       {notice && (
-        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+        <div role="status" className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
           {notice}
         </div>
       )}
@@ -383,7 +429,7 @@ export default function ProductsPage() {
           ) : (
             products.map((p) => (
               <div key={p.id} className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   {p.imageUrl && (
                     <div className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0">
                       <Image
@@ -396,7 +442,7 @@ export default function ProductsPage() {
                       />
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-[120px] break-words">
                     <h3 className="font-semibold text-slate-900">{p.name}</h3>
                     {p.description && (
                       <p className="text-slate-500 text-sm mt-1">{p.description}</p>
@@ -424,26 +470,34 @@ export default function ProductsPage() {
                     </div>
                   </div>
 
-                  <div className="ml-6 flex items-center gap-2">
+                  <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:ml-2">
                     <button
                       onClick={() => updateQty(p.id, (quantities[p.id] ?? 0) - 1)}
-                      className="w-8 h-8 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
+                      disabled={(quantities[p.id] ?? 0) <= 0}
+                      aria-label={`${p.name}を1箱減らす`}
+                      className="w-11 h-11 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 flex items-center justify-center font-bold"
                     >
                       −
                     </button>
                     <input
-                      type="text"
+                      type="number"
+                      min={0}
+                      max={p.availableBoxes}
+                      step={1}
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={quantities[p.id] ?? 0}
-                      onChange={(e) => updateQty(p.id, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
+                      onChange={(e) => { const n = Number(e.target.value); if (Number.isFinite(n)) updateQty(p.id, n); }}
+                      aria-invalid={!Number.isInteger(quantities[p.id] ?? 0) || (quantities[p.id] ?? 0) > p.availableBoxes}
                       onFocus={(e) => e.target.select()}
-                      className="w-14 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      aria-label={`${p.name}の注文箱数`}
+                      className="w-16 h-11 text-center border border-slate-300 rounded-lg py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
                       onClick={() => updateQty(p.id, (quantities[p.id] ?? 0) + 1)}
                       disabled={(quantities[p.id] ?? 0) >= p.availableBoxes}
-                      className="w-8 h-8 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center font-bold"
+                      aria-label={`${p.name}を1箱増やす`}
+                      className="w-11 h-11 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-30 flex items-center justify-center font-bold"
                     >
                       ＋
                     </button>
@@ -470,16 +524,17 @@ export default function ProductsPage() {
 
             {/* Address Select */}
             <div className="mb-4">
-              <label className="block text-xs font-medium text-slate-700 mb-1.5">配送先</label>
+              <label htmlFor="order-address" className="block text-xs font-medium text-slate-700 mb-1.5">配送先</label>
               {addresses.length === 0 ? (
-                <a href="/addresses" className="text-sm text-blue-600 hover:underline">
+                <a href="/addresses" className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
                   配送先を追加してください →
                 </a>
               ) : (
                 <select
+                  id="order-address"
                   value={selectedAddress}
                   onChange={(e) => setSelectedAddress(e.target.value)}
-                  className="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-11 text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">配送先を選択</option>
                   {addresses.map((a) => (
@@ -515,7 +570,7 @@ export default function ProductsPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-4">
+              <div ref={errorRef} role="alert" tabIndex={-1} className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 mb-4 scroll-mt-24">
                 {error}
               </div>
             )}
@@ -523,7 +578,7 @@ export default function ProductsPage() {
             <button
               onClick={goToConfirm}
               disabled={cartTotal === 0}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
+              className="w-full min-h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-500 text-white py-2.5 rounded-xl font-semibold text-sm transition-colors"
             >
               注文内容を確認する
             </button>

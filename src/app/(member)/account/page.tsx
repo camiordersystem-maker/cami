@@ -37,11 +37,11 @@ export default function AccountPage() {
         setMessage({ text: "パスワードを変更しました", ok: true });
         setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       } else {
-        setMessage({ text: apiErrorMessage(data, "エラーが発生しました"), ok: false });
+        setMessage({ text: apiErrorMessage(data, "処理を完了できませんでした。もう一度お試しください。"), ok: false });
       }
     } catch {
       setSaving(false);
-      setMessage({ text: "ネットワークエラーが発生しました。再度お試しください。", ok: false });
+      setMessage({ text: "通信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。", ok: false });
     }
   }
 
@@ -62,7 +62,7 @@ export default function AccountPage() {
           </div>
           <div className="flex gap-4">
             <span className="text-slate-500 w-24 shrink-0">メールアドレス</span>
-            <span className="text-slate-900">{session?.user?.email}</span>
+            <span className="min-w-0 break-all text-slate-900">{session?.user?.email}</span>
           </div>
         </div>
       </div>
@@ -77,46 +77,61 @@ export default function AccountPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {session?.user?.managedAuth ? <p className="text-base leading-7 text-slate-700">このアカウントのパスワード変更は、運用担当者へご連絡ください。</p> : <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="current-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               現在のパスワード <span className="text-red-500">*</span>
             </label>
             <input
+              id="current-password"
+              name="currentPassword"
               type="password"
               required
               value={form.currentPassword}
               onChange={(e) => update("currentPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="current-password"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="new-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               新しいパスワード <span className="text-red-500">*</span>
             </label>
             <input
+              id="new-password"
+              name="newPassword"
               type="password"
               required
               minLength={8}
               value={form.newPassword}
               onChange={(e) => update("newPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="new-password"
               placeholder="8文字以上"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label
+              htmlFor="confirm-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
               新しいパスワード（確認） <span className="text-red-500">*</span>
             </label>
             <input
+              id="confirm-password"
+              name="confirmPassword"
               type="password"
               required
               minLength={8}
               value={form.confirmPassword}
               onChange={(e) => update("confirmPassword", e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-h-11 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoComplete="new-password"
             />
           </div>
@@ -124,11 +139,11 @@ export default function AccountPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+            className="min-h-11 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
           >
             {saving ? "変更中..." : "パスワードを変更する"}
           </button>
-        </form>
+        </form>}
 
         <div className="mt-6 text-xs text-slate-500 bg-slate-50 rounded-lg px-4 py-3">
           パスワードを忘れた場合は本部（{process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "info@cami.co.jp"}）へお問い合わせください。

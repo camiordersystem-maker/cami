@@ -24,3 +24,8 @@ body {
     background: white;
   }
 }
+
+/* Cami environment banner viewport offset */
+body > .bg-amber-500 ~ .min-h-screen {
+  --cami-top-offset: 2.25rem;
+}

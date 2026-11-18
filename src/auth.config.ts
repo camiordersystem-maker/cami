@@ -1,6 +1,12 @@
 import type { NextAuthConfig } from "next-auth";
 
-export const authConfig = {
+export const authConfigBase = {
+  // Vercel/Cloudflare Workersなどエッジ実行環境ではリクエストの転送経路が
+  // 挟まるため、Auth.jsが受け取るHostヘッダーを自前で検証できず
+  // デフォルトでは「信頼できないホスト」としてエラーになる
+  // (UntrustedHost)。TLS終端・Hostヘッダーの正当性はプラットフォーム側
+  // (Vercel/Cloudflare)が担保しているため、ここでは信頼して問題ない。
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
@@ -18,13 +24,26 @@ export const authConfig = {
         session.user.id = token.id as string;
         (session.user as { role: string }).role = token.role as string;
         (session.user as { adminRole?: string }).adminRole = token.adminRole as string | undefined;
+        session.user.reviewExpiresAt = typeof token.reviewExpiresAt === "string" ? token.reviewExpiresAt : undefined;
+        session.user.managedAuth = typeof token.managedAuthUserId === "string";
+        session.user.profileIncomplete = token.role === "member" && token.profileIncomplete === true;
       }
       return session;
     },
   },
-  providers: [], // Credentials added in auth.ts (Node.js only)
   // JWTセッションはステートレスなため、パスワード変更やログアウト操作を
   // 他端末の既存セッションへ即座に反映できない。maxAgeを短くして、
   // セッション漏えい・端末紛失時の影響時間を抑える（既定の30日は長すぎる）。
   session: { strategy: "jwt" as const, maxAge: 14 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
+} satisfies Omit<NextAuthConfig, "providers">;
+
+/**
+ * Edge / Proxy 用Auth.js設定。
+ *
+ * Credentials ProviderはDB・bcryptを使用するためauth.ts側だけで追加する。
+ * Edge側では空のprovidersを維持する。
+ */
+export const authConfig = {
+  ...authConfigBase,
+  providers: [],
 } satisfies NextAuthConfig;
