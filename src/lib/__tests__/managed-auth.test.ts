@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { passwordFingerprint } from "../review-auth";
-import { ManagedAuthUnavailable, managedAccessAllowed, readManagedPolicy, verifyManagedPassword } from "../managed-auth";
+import { ManagedAuthUnavailable, managedAccessAllowed, managedProfileIncomplete, readManagedPolicy, verifyManagedPassword } from "../managed-auth";
 
 async function main() {
   const hash = await passwordFingerprint("fixture-only-hash");
@@ -31,6 +31,9 @@ async function main() {
   const before = calls;
   assert.equal(await verifyManagedPassword(policy, principal, { ...user, isActive: false }, "fixture-password", mock({})), false);
   assert.equal(calls, before);
+  const profile = { companyName: "Fixture salon", contactName: "Fixture contact", phone: "03-0000-0000", address: "Fixture address" };
+  assert.equal(managedProfileIncomplete(profile), false);
+  for (const changes of [{ companyName: "Cami 運用確認店舗" }, { contactName: "担当者未登録" }, { phone: "未登録" }, { address: "  " }]) assert.equal(managedProfileIncomplete({ ...profile, ...changes }), true);
   console.log("Managed operations auth: editor/member identity binding, deactivation, suspension, hash revocation, no role escalation, no fallback, secret-safe failures PASS");
 }
 main().catch(e => { console.error(e); process.exitCode = 1; });

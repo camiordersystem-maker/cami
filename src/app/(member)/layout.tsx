@@ -227,6 +227,7 @@ export default function MemberLayout({
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         <main className="flex-1 min-w-0 p-4 md:p-8">
+          {session?.user?.profileIncomplete && <div role="status" className="mb-5 border-y border-amber-300 py-3 text-base leading-7 text-amber-950">注文前に、本部で店舗名・担当者・電話番号・住所を登録してください。その後、配送先を登録し、約款をご確認ください。</div>}
           <NotificationBanner />
           {contextHelpHref && (
             <div className="mb-3 flex justify-end">

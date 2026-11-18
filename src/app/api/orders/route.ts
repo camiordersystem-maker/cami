@@ -9,6 +9,7 @@ import { conflict, forbidden, internalError, notFound, ok, unauthorized, validat
 import { isPostgresRuntime } from "@/lib/env";
 import { sendOrderPostCommitNotifications } from "@/lib/orders/post-commit-notifications";
 import { changeInventory } from "@/lib/inventory";
+import { managedProfileIncomplete } from "@/lib/managed-auth";
 
 const orderItemSchema = z.object({
   productId: z.string(),
@@ -62,11 +63,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const [member] = await db
-      .select({ id: schema.members.id, email: schema.members.email, companyName: schema.members.companyName, rankId: schema.members.rankId })
+      .select({ id: schema.members.id, email: schema.members.email, companyName: schema.members.companyName, contactName: schema.members.contactName, phone: schema.members.phone, address: schema.members.address, rankId: schema.members.rankId })
       .from(schema.members)
       .where(eq(schema.members.id, memberId));
 
     if (!member) return notFound("会員が見つかりません");
+    if (session.user.managedAuth && managedProfileIncomplete(member)) {
+      return conflict("注文前に、本部へ店舗名・担当者・電話番号・住所の登録をご依頼ください。");
+    }
 
     const [rank] = await db
       .select()

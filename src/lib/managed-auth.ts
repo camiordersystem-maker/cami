@@ -12,6 +12,10 @@ export type ManagedPolicy = z.infer<typeof schema>;
 export type ManagedLocalUser = { id: string; email: string; password: string; role?: string | null; isActive?: boolean; status?: string };
 export class ManagedAuthUnavailable extends Error { constructor() { super("MANAGED_AUTH_UNAVAILABLE"); } }
 
+export function managedProfileIncomplete(user: { companyName: string; contactName: string; phone: string; address: string }): boolean {
+  return user.companyName === "Cami 運用確認店舗" || [user.companyName, user.contactName, user.phone, user.address].some(value => !value.trim() || value.includes("未登録"));
+}
+
 export function readManagedPolicy(raw: string | undefined, environment: string | undefined): ManagedPolicy | null {
   if (!raw) return null;
   try {

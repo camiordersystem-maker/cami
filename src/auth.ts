@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { readReviewAuthPolicy, reviewAccessAllowed, verifyReviewPassword } from "@/lib/review-auth";
-import { readManagedPolicy, managedAccessAllowed, verifyManagedPassword } from "@/lib/managed-auth";
+import { readManagedPolicy, managedAccessAllowed, managedProfileIncomplete, verifyManagedPassword } from "@/lib/managed-auth";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -49,6 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const principal = managedPolicy?.principals.find(p => p.kind === "member" && p.localId === member.id);
         if (token.managedAuthUserId || principal) {
           if (!principal || token.managedAuthUserId !== principal.authUserId || !await managedAccessAllowed(principal, member, "member")) return null;
+          token.profileIncomplete = managedProfileIncomplete(member);
         }
       }
       return token;

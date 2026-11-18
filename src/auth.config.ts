@@ -26,6 +26,7 @@ export const authConfigBase = {
         (session.user as { adminRole?: string }).adminRole = token.adminRole as string | undefined;
         session.user.reviewExpiresAt = typeof token.reviewExpiresAt === "string" ? token.reviewExpiresAt : undefined;
         session.user.managedAuth = typeof token.managedAuthUserId === "string";
+        session.user.profileIncomplete = token.role === "member" && token.profileIncomplete === true;
       }
       return session;
     },
