@@ -145,8 +145,8 @@ export default function AdminProductsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-slate-900">商品管理</h1>
           <p className="text-slate-500 text-sm mt-1">商品マスタの追加・編集・画像登録</p>
         </div>
@@ -290,7 +290,7 @@ export default function AdminProductsPage() {
           <div className="divide-y divide-slate-100">
             {visibleProducts.map((p) => (
               <div key={p.id} className="px-6 py-4">
-                <div className="flex items-start gap-4">
+                <div className="flex flex-wrap items-start gap-4">
                   {/* Thumbnail */}
                   <div className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-50 flex items-center justify-center">
                     {p.imageUrl ? (
@@ -307,8 +307,8 @@ export default function AdminProductsPage() {
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="min-w-[min(100%,12rem)] flex-1 break-words">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-semibold text-slate-900 text-sm">{p.name}</span>
                       {!p.isActive && (
                         <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">販売停止中</span>
@@ -331,7 +331,7 @@ export default function AdminProductsPage() {
                   </div>
 
                   {!isViewer && (
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex max-w-full flex-wrap items-center gap-2 shrink-0">
                       <button
                         onClick={() => openForm(p)}
                         className="text-xs text-blue-600 hover:underline"
